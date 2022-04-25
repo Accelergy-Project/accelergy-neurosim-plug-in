@@ -13,7 +13,7 @@ PIM crossbar energy/area is dominated by four pieces.
 - Cell: This a memory cells in the crossbar.
 - Analog-Digital-Conversion: This is the circuit that reads an analog value from the crossbar and converts to a digital signal for output processing. 
 
-In short, an input activates a row, an output activates a column, a multiplication activates a cell, and an output read takes an ADC conversion.
+In short: An input activates a row, an output activates a column, a multiplication activates a cell, and an output read takes an ADC conversion.
 
 ## Installing
 ```
