@@ -1,0 +1,62 @@
+version: 0.0
+
+# I just put everything I could think of here
+# The intention is to be as robust as possible to different users'
+# vocabularies.
+pim_actions: &pim_actions
+  - name: read
+  - name: mac
+  - name: fire
+  - name: drive
+  - name: run
+  - name: mac_random
+  - name: mac_reused
+  - name: compute
+  - name: write
+  - name: set
+  - name: erase
+  - name: idle
+  - name: gated_read
+  - name: gated_write
+  - name: skipped_read
+  - name: skipped_write
+  - name: add
+  - name: shift_add
+  - name: max_pool
+  - name: maxpool
+
+classes:
+  - name: pim_row_drivers
+    actions: *pim_actions
+    attributes:
+      none: here_so_list_is_not_empty
+
+  - name: pim_col_drivers
+    actions: *pim_actions
+    attributes:
+      none: here_so_list_is_not_empty
+
+  - name: pim_cell
+    actions: *pim_actions
+    attributes:
+      none: here_so_list_is_not_empty
+
+  - name: shift_add
+    actions: *pim_actions
+    attributes:
+      none: here_so_list_is_not_empty
+
+  - name: neurosim_adder
+    actions: *pim_actions
+    attributes:
+      none: here_so_list_is_not_empty
+
+  - name: neurosim_adder_tree
+    actions: *pim_actions
+    attributes:
+      none: here_so_list_is_not_empty
+
+  - name: max_pool
+    actions: *pim_actions
+    attributes:
+      none: here_so_list_is_not_empty
