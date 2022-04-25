@@ -16,7 +16,11 @@ PIM crossbar energy/area is dominated by four pieces.
 In short, an input activates a row, an output activates a column, a multiplication activates a cell, and an output read takes an ADC conversion.
 
 ## Installing
-> python3 setup.py build_ext && pip install .
+```
+git clone --recurse-submodules https://github.com/Accelergy-Project/accelergy-neurosim-plugin.git
+cd accelergy-neurosim-plugin
+python3 setup.py build_ext && pip install .
+```
 
 ## Creating Custom Cells
 Cell files must follow the NVSim/NVMExplorer format. See the cells/ directory for references. 
