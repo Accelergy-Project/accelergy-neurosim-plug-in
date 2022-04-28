@@ -236,7 +236,7 @@ class Crossbar:
                  rows: int,
                  cols: int,
                  cols_muxed: int,
-                 technode: int,
+                 technology: int,
                  adc_resolution: int):
 
         self.comps = []
@@ -244,7 +244,7 @@ class Crossbar:
         self.rows = rows
         self.cols = cols
         self.cols_muxed = cols_muxed
-        self.technode = technode
+        self.technology = technology
         self.adc_resolution = 2 ** adc_resolution + 1
         self.has_adc = adc_resolution > 0
 
@@ -256,7 +256,7 @@ class Crossbar:
         cfg = buildcfg(cellfile, cfgfile)
         # Make sure cols_muxed is set before cols so that you don't get part of the name
         # overwritten
-        my_set = ['sequential', 'cols_muxed', 'rows', 'cols', 'technode', 'adc_resolution']
+        my_set = ['sequential', 'cols_muxed', 'rows', 'cols', 'technology', 'adc_resolution']
         for to_set in my_set:
             print(f'Setting {to_set} to {getattr(self, to_set)}')
             cfg = replace_cfg(to_set, getattr(self, to_set), cfg, cfgfile)
