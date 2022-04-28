@@ -453,11 +453,9 @@ void CalculateEnergy(MemCell& cell) {
 
 	if(genCrossbar) {
 		printf("========================================================================================================================================================================================\n");
-		printf("ASHFJDSHLKASJFHSAKF\n");
 		printf("WRITE: %d ROW, %d COL\n", subArray->numRow, subArray->numCol);
 		printf("========================================================================================================================================================================================\n");
 		printHeading();
-		printf("ASHFJDSHLKASJFHSAKF\n");
 
 		for(auto& c: xbarComps) {
 			auto s = CalculateScaling(c, true, 1);
@@ -549,7 +547,7 @@ int main(int argc, char *argv[]) {
 	printf("\tAdded config file reading to the parameter file.\n");
 	printf("\tDisabled memristor CMOS access width calculation, allowing users to specify.\n");
 	printf("\tCreated top-level file that calculates energy scaling for each component.\n");
-	printf("\tCreated Accelergy interfacing scripts.");
+	printf("\tCreated Accelergy interfacing scripts.\n");
 	printf("================================================================================\n");
 
 
