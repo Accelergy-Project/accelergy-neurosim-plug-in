@@ -13,6 +13,8 @@ DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, 'default_config.cfg')
 NEUROSIM_PATH = os.path.join(SCRIPT_DIR, 'NeuroSim/main')
 CFG_WRITE_PATH = os.path.join(SCRIPT_DIR, './neurosim_input.cfg')
 
+DEBUG = False
+
 # ==================================================================================================
 # NVSIM/NVMEXPLORER -> NEUROSIM TRANSLATIONS
 # ==================================================================================================
@@ -156,6 +158,8 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
     for k, v in NV_TO_NEURO_TERNARIES.items():
         PARSED[v[0]] = v[1] if nvsimget(k, celltext, True) else v[2]
 
+    print('Neurosim Plugin parsing cell file...')
+
     # Parse expressions
     for n in NV_TO_NEURO:
         key, v = n
@@ -171,7 +175,7 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
                 neuroname = k
                 try:
                     PARSED[neuroname] = v()
-                    print(f'{neuroname} {PARSED[neuroname]}')
+                    print(f'\t{neuroname}={PARSED[neuroname]}')
                     break
                 except KeyError as e:
                     errors.append(f'Could not find value of {e}.')
@@ -186,8 +190,8 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
                 errors.append(f'Could not find {k} in cell file.')
         # If we failed, record errors
         else:
-            failstr = f'Failed to calculate "{neuroname}". Ignore if this value is not needed.'
-            fails[neuroname] = fails.get(neuroname, [failstr]) + [f'\t{e}' for e in errors]
+            failstr = f'\tFailed to calculate "{neuroname}". Ignore if this value is not needed.'
+            fails[neuroname] = fails.get(neuroname, [failstr]) + [f'\t\t{e}' for e in errors]
 
     for k, v in fails.items():
         if k in PARSED: # It succeeded somewhere else!
@@ -273,7 +277,8 @@ class Crossbar:
             print(f'WARNING: NeuroSIM returned error code {proc.returncode}')
             print(err.decode('utf-8'))
         results = results.decode('utf-8')
-        print(results)
+        if DEBUG:
+            print(results)
         self.comps = [Component(line) for line in results.split('\n') if '<COMPONENT>' in line]
         if not self.comps:
             print("\n\nERROR: NeuroSIM returned no components. NeuroSIM output below.")
@@ -313,11 +318,11 @@ class Crossbar:
         """
         Returns the energy of reading/writing a memory cell depending on HI or LO conductance.
         """
-        print(f'Getting cell energy. Has ADC: {self.has_adc}')
+        #print(f'Getting cell energy. Has ADC: {self.has_adc}')
         comps = self.get_components(read, hi)
-        print(f'Found {len(comps)} components. {", ".join(c.name for c in comps)}')
-        for c in comps:
-            print(f'\t{c.name}: {c.energy_per_row} + {c.energy_per_cell}')
+        #print(f'Found {len(comps)} components. {", ".join(c.name for c in comps)}')
+        #for c in comps:
+        #    print(f'\t{c.name}: {c.energy_per_row} + {c.energy_per_cell}')
         return sum(c.energy_per_cell for c in comps)
 
     def area_per_cell(self) -> float:
@@ -397,8 +402,8 @@ def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
 def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     cell_on = crossbar.energy_cell(True, True) # Cell energy from driving current through cell
     cell_off = crossbar.energy_cell(True, False)
+    
     read_memcell_energy = (cell_off + (cell_on - cell_off) * avg_cell) * avg_input
-
     cell_on = crossbar.energy_cell(False, True) # Cell energy from driving current through cell
     cell_off = crossbar.energy_cell(False, False)
     write_memcell_energy = cell_on + (cell_off - cell_on) * avg_cell

@@ -11,7 +11,7 @@ import neurointerface
 # ==================================================================================================
 # Constants
 # ==================================================================================================
-
+DEBUG = False
 ACCURACY = 70
 PERMITTED_TECH_NODES = [7, 10, 14, 22, 32, 45, 65, 90, 130]
 SAMPLE_CELLS = [
@@ -118,7 +118,8 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
 def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
     """ Queries Neurosim for the stats for 'kind' component with 'attributes' attributes """
     assert kind in SUPPORTED_CLASSES, f'Unsupported primitive: {kind}'
-    print(f'Querying Neurosim for {kind} with attributes: {attributes}')
+    if DEBUG:
+        print(f'Querying Neurosim for {kind} with attributes: {attributes}')
 
     # Load defaults
     to_pass = {k: v[1] for k, v in ALL_PARAMS.items()}
@@ -189,7 +190,11 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
     if hi != lo:
         print(f'Interpolating between {lo}nm and {hi}nm. Interpolation point: {interp_pt}')
 
-    return {k: lo_est[k] + (hi_est[k] - lo_est[k]) * interp_pt for k in hi_est}
+    rval = {k: lo_est[k] + (hi_est[k] - lo_est[k]) * interp_pt for k in hi_est}
+    if DEBUG:
+        print(f'NeuroSim returned: {rval}')
+
+    return rval
 
 
 
