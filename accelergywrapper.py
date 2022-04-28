@@ -41,7 +41,8 @@ PIM_PARAMS = {
                                  f'crossbar will be set up to activate one row at a time. '
                                  f'Can be used as a memory this way.', False),
     'adc_resolution':           (f'OPTIONAL: ADC resolution. Set this if to use Neurosim\'s '
-                                 f'build-in ADC. Default is False.', 0)
+                                 f'build-in ADC. Default is False.', 0),
+    'read_pulse_width':         (f'OPTIONAL: Read pulse width. Default is 10ns.', 1e-8, float),
 }
 
 ADDER_PARAMS = {

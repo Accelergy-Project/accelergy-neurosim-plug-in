@@ -76,7 +76,7 @@ NV_TO_NEURO = [
         / (PARSED['writeVoltage:'] ** 2 * PARSED['AVG_CONDUCTANCE'])),
 
     ('-ReadVoltage (V):', 'readVoltage:'),
-    ('-ReadPulse (ns):', ('readPulseWidth:', 1e-9)),
+    # ('-ReadPulse (ns):', ('readPulseWidth:', 1e-9)),
     ('-ReadCurrent (uA):', ('READ_CURRENT', 1e-6)),
     ('-ReadEnergy (pJ):', ('READ_ENERGY', 1e-12)),
     ('-ReadPower (uW):', ('READ_POWER', 1e-6)),
@@ -84,9 +84,9 @@ NV_TO_NEURO = [
         / PARSED['AVG_CONDUCTANCE'] ** 2)),
     ('readVoltage:', lambda: PARSED.get('readVoltage:', PARSED['READ_CURRENT'] \
         / PARSED['AVG_CONDUCTANCE'])),
-    ('readPulseWidth:', lambda: PARSED['READ_ENERGY'] \
-        / (PARSED['readVoltage:'] ** 2 * PARSED['AVG_CONDUCTANCE'])),
-    ('readPulseWidth:', lambda: PARSED.get('readPulseWidth:', 1e-8)),
+    #('readPulseWidth:', lambda: PARSED['READ_ENERGY'] \
+    #    / (PARSED['readVoltage:'] ** 2 * PARSED['AVG_CONDUCTANCE'])),
+    #('readPulseWidth:', lambda: PARSED.get('readPulseWidth:', 1e-8)),
 
     # Activate transistor if CMOS, else raise to read voltage
     ('accessVoltage:', lambda: 0.7 if PARSED['accesstype:'] == 1 else PARSED['readVoltage:']),
