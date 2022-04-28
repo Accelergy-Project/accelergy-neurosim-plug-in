@@ -186,7 +186,7 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
             # If it's not callable, try to grab it from the cell file
             elif nvsimget(k, celltext, True):
                 PARSED[neuroname] = nvsimget(k, celltext, False) * scale
-                print(f'{neuroname} {PARSED[neuroname]}')
+                print(f'\t{neuroname}={PARSED[neuroname]}')
                 break
             else:
                 errors.append(f'Could not find {k} in cell file.')
@@ -239,7 +239,8 @@ class Crossbar:
                  cols: int,
                  cols_muxed: int,
                  technology: int,
-                 adc_resolution: int):
+                 adc_resolution: int,
+                 read_pulse_width: float):
 
         self.comps = []
         self.sequential = 1 if sequential else 2
@@ -249,6 +250,7 @@ class Crossbar:
         self.technology = technology
         self.adc_resolution = 2 ** adc_resolution + 1
         self.has_adc = adc_resolution > 0
+        self.read_pulse_width = read_pulse_width
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
@@ -258,11 +260,13 @@ class Crossbar:
         cfg = buildcfg(cellfile, cfgfile)
         # Make sure cols_muxed is set before cols so that you don't get part of the name
         # overwritten
-        my_set = ['sequential', 'cols_muxed', 'rows', 'cols', 'technology', 'adc_resolution']
+        my_set = ['sequential', 'cols_muxed', 'rows', 'cols',
+                  'technology', 'adc_resolution', 'read_pulse_width']
         for to_set in my_set:
-            print(f'Setting {to_set} to {getattr(self, to_set)}')
+            print(f'\tSetting {to_set} to {getattr(self, to_set)}')
             cfg = replace_cfg(to_set, getattr(self, to_set), cfg, cfgfile)
         for to_set in [a for a in other_args if a[0] not in my_set]:
+            print(f'\tSetting {to_set[0]} to {to_set[1]}')
             cfg = replace_cfg(to_set[0], to_set[1], cfg, cfgfile)
 
         # Write config

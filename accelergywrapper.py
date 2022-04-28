@@ -107,8 +107,9 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
         'rows': attrs['rows'],
         'cols': attrs['cols'],
         'cols_muxed': math.ceil(attrs['rows'] / attrs['cols_active_at_once']),
-        'technode': attrs['technode'],
-        'adc_resolution': attrs['adc_resolution']
+        'technology': attrs['technology'],
+        'adc_resolution': attrs['adc_resolution'],
+        'read_pulse_width': attrs['read_pulse_width'],
     }
     if key not in CACHE:
         CACHE[key] = neurointerface.Crossbar(**attrs)
@@ -134,7 +135,9 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
         if 'REQUIRED' in params[p][0]:
             assert p in attributes, f'Failed to generate {kind}. Required parameter not found: ' \
                                     f'{p}. Usage: \n{dict_to_str(docs)}'
-        to_pass[p] = attributes[p]
+        elif p not in attributes:
+            attributes[p] = to_pass[p]
+
         passtype = params[p][2] if len(params[p]) > 2 else int
         try:
             if isinstance(attributes[p], str) and passtype != str:
@@ -147,10 +150,6 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
         except ValueError:
             raise ValueError(f'Failed to generate {kind}. Parameter {p} must be of type ' \
                              f'{passtype}. Given: "{attributes[p]}" Usage: \n{dict_to_str(docs)}')
-
-    # Input check
-    for a in ALL_PARAMS:
-        to_pass[a] = to_pass.get(a, ALL_PARAMS[a][1])
 
     tn = PERMITTED_TECH_NODES
     assert to_pass['rows'] > 8, \
@@ -184,8 +183,8 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
     hi = min(p for p in PERMITTED_TECH_NODES if p >= t)
     lo = max(p for p in PERMITTED_TECH_NODES if p <= t)
     interp_pt = (t - lo) / (hi - lo) if hi - lo else 0
-    hi_crossbar = build_crossbar({**to_pass, 'technode': hi})
-    lo_crossbar = build_crossbar({**to_pass, 'technode': lo})
+    hi_crossbar = build_crossbar({**to_pass, 'technology': hi})
+    lo_crossbar = build_crossbar({**to_pass, 'technology': lo})
     hi_est = callfunc(hi_crossbar, to_pass['average_input_value'], to_pass['average_cell_value'])
     lo_est = callfunc(lo_crossbar, to_pass['average_input_value'], to_pass['average_cell_value'])
     if hi != lo:
