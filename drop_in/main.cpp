@@ -143,8 +143,12 @@ void Initalize(int _numRow, int _numCol, InputParameter& inputParameter, Technol
 		default:	exit(-1);
 	}
 	
+
 	subArray = new SubArray(inputParameter, tech, cell);
-		
+	
+	subArray->FPGA = false; // The FPGA set is from Tanner... by default FPGA is true
+
+
 	/* Create SubArray object and link the required global objects (not initialization) */
 	inputParameter.temperature = param->temp;   // Temperature (K)
 	inputParameter.processNode = param->technode;    // Technology node
@@ -474,8 +478,13 @@ void CalculateEnergy(MemCell& cell) {
 			// Neurosim charges SRAM gate flip energy as array energy. Calculate by flipping exactly
 			// One SRAM cell
 			cellWriteEnergyLoHalfSelected = cellWriteEnergyHiHalfSelected = 0;
+			printf("Width of SRAM cell: %e\n", cell.widthSRAMCellNMOS * tech.featureSize);
+			printf("Width of SRAM cell: %e\n", cell.widthSRAMCellPMOS * tech.featureSize);
+			printf("Temperature: %e\n", inputParameter.temperature);
+			printf("Tech feature size: %e\n", tech.featureSize);
 			cellLeakage = CalculateGateLeakage(INV, 1, cell.widthSRAMCellNMOS * tech.featureSize,
 						cell.widthSRAMCellPMOS * tech.featureSize, inputParameter.temperature, tech) * tech.vdd * 2;
+			printf("Cell leakage: %e\n", cellLeakage);
 			CalculateEnergy(cell, 0, 1, 0, 1, 0);
 			cellWriteEnergyLo = cellWriteEnergyHi = subArray->writeDynamicEnergyArray;
 		}
@@ -549,7 +558,6 @@ int main(int argc, char *argv[]) {
 	printf("\tCreated top-level file that calculates energy scaling for each component.\n");
 	printf("\tCreated Accelergy interfacing scripts.\n");
 	printf("================================================================================\n");
-
 
 	// RENAMED MAIN.CPP to main.old to avoid name conflicts
 	// Must include definition.h in this file

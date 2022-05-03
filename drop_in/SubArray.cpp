@@ -4,6 +4,7 @@
 * Email: Andrulis@mit.edu
 * Changes madein this file:
 *	Disabled CMOS access width calculation, allowing users to select their own width
+*   Set column mux layout to MAGIC
 *
 * Copyright (c) 2015-2017
 * School of Electrical, Computer and Energy Engineering, Arizona State University
@@ -385,7 +386,7 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 			} else if (conventionalParallel) { 
 				wlSwitchMatrix.CalculateArea(heightArray, NULL, NONE);
 				if (numColMuxed>1) {
-					mux.CalculateArea(NULL, widthArray, NONE);
+					mux.CalculateArea(NULL, widthArray, MAGIC); // CHANGED NONE -> MAGIC
 					muxDecoder.CalculateArea(NULL, NULL, NONE);
 					double minMuxHeight = MAX(muxDecoder.height, mux.height);
 					mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE);
@@ -460,7 +461,7 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				}				
 				slSwitchMatrix.CalculateArea(NULL, widthArray, NONE);
 				if (numColMuxed > 1) {
-					mux.CalculateArea(NULL, widthArray, NONE);
+					mux.CalculateArea(NULL, widthArray, MAGIC); // Changed NONE to MAGIC
 					muxDecoder.CalculateArea(NULL, NULL, NONE);
 					double minMuxHeight = MAX(muxDecoder.height, mux.height);
 					mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE);
@@ -501,7 +502,7 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				}
 				slSwitchMatrix.CalculateArea(NULL, widthArray, NONE);
 				if (numColMuxed > 1) {
-					mux.CalculateArea(NULL, widthArray, NONE);
+					mux.CalculateArea(NULL, widthArray, MAGIC); // Changed NONE to MAGIC
 					muxDecoder.CalculateArea(NULL, NULL, NONE);
 					double minMuxHeight = MAX(muxDecoder.height, mux.height);
 					mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE);
