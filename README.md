@@ -1,10 +1,10 @@
 # NeuroSim Accelergy Plugin
-This Accelery plugin provides estimations for Neurosim components. It enables estimation for analog Processing-In-Memory Crossbar components and various peripheral components.
+This Accelery plugin provides estimations for NeuroSim[1] components. It enables estimation for analog Processing-In-Memory Crossbar components and various peripheral components.
 
-We also allow conversions for NVSim/NVMExplorer style cell files to Neurosim crossbars.
+We also allow conversions for NVMExplorer[2]/NVSim[3] style cell files to Neurosim crossbars.
 
 ## PIM Crossbar Model
-We encourage you read section 6 of the Neurosim Manual in the DNN_NeuroSim_V1.3/Documents folder.
+We encourage you read section 6 of the NeuroSim Manual in the DNN_NeuroSim_V1.3/Documents folder.
 
 PIM crossbar energy/area is dominated by four pieces.
 
@@ -13,7 +13,7 @@ PIM crossbar energy/area is dominated by four pieces.
 - Cell: This a memory cells in the crossbar.
 - Analog-Digital-Conversion: This is the circuit that reads an analog value from the crossbar and converts to a digital signal for output processing. 
 
-In short, an input activates a row, an output activates a column, a multiplication activates a cell, and an output read takes an ADC conversion.
+In short: An input activates a row, an output activates a column, a multiplication activates a cell, and an output read takes an ADC conversion.
 
 ## Installing
 ```
@@ -23,7 +23,7 @@ python3 setup.py build_ext && pip install .
 ```
 
 ## Creating Custom Cells
-Cell files must follow the NVSim/NVMExplorer format. See the cells/ directory for references. 
+Cell files must follow the NVMExplorer[2]/NVSim[3] format. See the cells/ directory for references. 
 PIM crossbars can be created with any user-defined cell.
 
 ## PIM Components
@@ -34,7 +34,7 @@ We support four components for estimating PIM crossbar energy. They take the fol
 - row: The number of rows in the crossbar
 - cols: The number of columns in the crossbar
 - cols_active_at_once: The number of columns to be activated at a single time
-- cell_config: The path to a NVSim/NVMExplorer cell file, or a sample cell to use.
+- cell_config: The path to a NVMExplorer[2]/NVSim[3] cell file, or a sample cell to use.
 - average_input_value: A value between 0 and 1 reflecting the average input being sent on rows. For example, if inputs are encoded as values from 0-4 with an average of 3, average_input_value is 0.75.
 - average_cell_value: Like average_input_value, but with encoded weights. For example, if weights are encoded as values from 1-10 with an average of 7, average_cell_value is 0.7.
 - sequential: A binary value. If true, rows are addressed and accessed one at a time. Otherwise, rows are to be activated in large blocks and not addressed. Setting this to TRUE can simulate a PIM memory.
@@ -98,3 +98,11 @@ Required parameters:
 
 Actions:
 - max_pool
+
+
+### References
+[1]X. Peng, S. Huang, Y. Luo, X. Sun, and S. Yu, “DNN+NeuroSim: An End-to-End Benchmarking Framework for Compute-in-Memory Accelerators with Versatile Device Technologies,” in 2019 IEEE International Electron Devices Meeting (IEDM), Dec. 2019, p. 32.5.1-32.5.4. doi: 10.1109/IEDM19573.2019.8993491.
+
+[2]L. Pentecost, A. Hankin, M. Donato, M. Hempstead, G.-Y. Wei, and D. Brooks, NVMExplorer: A Framework for Cross-Stack Comparisons of Embedded Non-Volatile Memories. 2021.
+
+[3]X. Dong, C. Xu, Y. Xie, and N. P. Jouppi, “NVSim: A Circuit-Level Performance, Energy, and Area Model for Emerging Nonvolatile Memory,” IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, vol. 31, no. 7, pp. 994–1007, Jul. 2012, doi: 10.1109/TCAD.2012.2185930.

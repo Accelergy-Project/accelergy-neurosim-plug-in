@@ -34,4 +34,3 @@
 
 -ReadFloating: false
 
--ReadEnergy (pJ): 0.000016 // Assuming read latency is .1ns

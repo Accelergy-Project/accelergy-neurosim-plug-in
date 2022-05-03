@@ -20,5 +20,3 @@
 -AccessType: CMOS
 -VoltageDropAccessDevice (V): 0.15
 -AccessCMOSWidth (F): 8
-
--ReadEnergy (pJ): 0.003 // Assuming read latency is .1ns
