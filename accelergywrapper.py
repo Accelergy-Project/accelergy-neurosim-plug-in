@@ -121,7 +121,7 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
     """ Queries Neurosim for the stats for 'kind' component with 'attributes' attributes """
     assert kind in SUPPORTED_CLASSES, f'Unsupported primitive: {kind}'
     if DEBUG:
-        print(f'Querying Neurosim for {kind} with attributes: {attributes}')
+        print(f'Info: Querying Neurosim for {kind} with attributes: {attributes}')
 
     # Load defaults
     to_pass = {k: v[1] for k, v in ALL_PARAMS.items()}
@@ -188,11 +188,11 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
     hi_est = callfunc(hi_crossbar, to_pass['average_input_value'], to_pass['average_cell_value'])
     lo_est = callfunc(lo_crossbar, to_pass['average_input_value'], to_pass['average_cell_value'])
     if hi != lo:
-        print(f'Interpolating between {lo}nm and {hi}nm. Interpolation point: {interp_pt}')
+        print(f'Info: Interpolating between {lo}nm and {hi}nm. Interpolation point: {interp_pt}')
 
     rval = {k: lo_est[k] + (hi_est[k] - lo_est[k]) * interp_pt for k in hi_est}
     if DEBUG:
-        print(f'NeuroSim returned: {rval}')
+        print(f'Info: NeuroSim returned: {rval}')
 
     return rval
 
@@ -230,8 +230,8 @@ class NeuroWrapper:
         if class_name in SUPPORTED_CLASSES:
             if action_name in ALL_ACTIONS:
                 return ACCURACY
-            print(f'NeuroSim estimator supports {class_name} but not action {action_name}')
-            print(f'Supported actions: {ALL_ACTIONS}')
+            print(f'ERROR: NeuroSim estimator supports {class_name} but not action {action_name}')
+            print(f'ERROR: Supported actions: {ALL_ACTIONS}')
         return 0
 
 

@@ -160,7 +160,7 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
     for k, v in NV_TO_NEURO_TERNARIES.items():
         PARSED[v[0]] = v[1] if nvsimget(k, celltext, True) else v[2]
 
-    print('Neurosim Plugin parsing cell file...')
+    print('Info: Neurosim Plugin parsing cell file...')
 
     # Parse expressions
     for n in NV_TO_NEURO:
@@ -177,7 +177,8 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
                 neuroname = k
                 try:
                     PARSED[neuroname] = v()
-                    print(f'\t{neuroname}={PARSED[neuroname]}')
+                    if DEBUG:
+                        print(f'\t{neuroname}={PARSED[neuroname]}')
                     break
                 except KeyError as e:
                     errors.append(f'Could not find value of {e}.')
@@ -186,14 +187,16 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
             # If it's not callable, try to grab it from the cell file
             elif nvsimget(k, celltext, True):
                 PARSED[neuroname] = nvsimget(k, celltext, False) * scale
-                print(f'\t{neuroname}={PARSED[neuroname]}')
+                if DEBUG:
+                    print(f'\t{neuroname}={PARSED[neuroname]}')
                 break
             else:
                 errors.append(f'Could not find {k} in cell file.')
         # If we failed, record errors
         else:
-            failstr = f'\tFailed to calculate "{neuroname}". Ignore if this value is not needed.'
-            fails[neuroname] = fails.get(neuroname, [failstr]) + [f'\t\t{e}' for e in errors]
+            if DEBUG:
+                failstr = f'\tFailed to calculate "{neuroname}". Ignore if this value is not needed.'
+                fails[neuroname] = fails.get(neuroname, [failstr]) + [f'\t\t{e}' for e in errors]
 
     for k, v in fails.items():
         if k in PARSED: # It succeeded somewhere else!
@@ -254,7 +257,7 @@ class Crossbar:
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
-        print(f'Building a crossbar with cell file {cellfile}')
+        print(f'Info: Building a crossbar with cell file {cellfile}')
 
         # Build config
         cfg = buildcfg(cellfile, cfgfile)
@@ -263,10 +266,12 @@ class Crossbar:
         my_set = ['sequential', 'cols_muxed', 'rows', 'cols',
                   'technology', 'adc_resolution', 'read_pulse_width']
         for to_set in my_set:
-            print(f'\tSetting {to_set} to {getattr(self, to_set)}')
+            if DEBUG:
+                print(f'\tSetting {to_set} to {getattr(self, to_set)}')
             cfg = replace_cfg(to_set, getattr(self, to_set), cfg, cfgfile)
         for to_set in [a for a in other_args if a[0] not in my_set]:
-            print(f'\tSetting {to_set[0]} to {to_set[1]}')
+            if DEBUG:
+                print(f'\tSetting {to_set[0]} to {to_set[1]}')
             cfg = replace_cfg(to_set[0], to_set[1], cfg, cfgfile)
 
         # Write config
@@ -275,7 +280,7 @@ class Crossbar:
             f.write(cfg)
 
         # Run
-        print(f'Running: {NEUROSIM_PATH} {inputpath}')
+        print(f'Info: Running: {NEUROSIM_PATH} {inputpath}')
         proc = subprocess.Popen([NEUROSIM_PATH, inputpath], stdout=subprocess.PIPE)
         proc.wait()
         results, err = proc.communicate()
