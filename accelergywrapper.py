@@ -155,7 +155,7 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
         f'Rows must be >=8. Got {to_pass["rows"]}'
     assert to_pass['cols'] > 8, \
         f'Columns must be >=8. Given: {to_pass["columns"]}'
-    assert to_pass['cols_active_at_once'] > 1, \
+    assert to_pass['cols_active_at_once'] >= 1, \
         f'Columns active at once must be >=1 and divide evenly into cols. ' \
         f'Given: {to_pass["cols"]} cols, {to_pass["cols_active_at_once"]} cols active at once'
     assert min(tn) <= to_pass['technology'] <= max(tn), \
