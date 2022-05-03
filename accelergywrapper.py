@@ -37,6 +37,8 @@ PIM_PARAMS = {
                                  f'0 and 1.', 1, float),
     'average_cell_value':       (f' REQUIRED: Average cell value. Must be between 0 and 1.', 1,
                                  float),
+    'latency':                  (f'REQUIRED: Latency between two subsequent reads of a cell in ns',
+                                 1e-7, float),
     'sequential':               (f'OPTIONAL: Sequential mode. Default is False. If True, the '
                                  f'crossbar will be set up to activate one row at a time. '
                                  f'Can be used as a memory this way.', False),
@@ -110,6 +112,7 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
         'technology': attrs['technology'],
         'adc_resolution': attrs['adc_resolution'],
         'read_pulse_width': attrs['read_pulse_width'],
+        'latency': attrs['latency'],
     }
     if key not in CACHE:
         CACHE[key] = neurointerface.Crossbar(**attrs)

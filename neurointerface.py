@@ -48,6 +48,7 @@ NV_TO_NEURO = [
     ('heightInFeatureSizeSRAM:', lambda: PARSED['heightInFeatureSize1T1R:']),
     ('widthInFeatureSizeSRAM:', lambda: PARSED['widthInFeatureSize1T1R:']),
 
+
     ##
     # SRAM Configuration
     ('-AccessCMOSWidth (F):', 'widthAccessCMOS:'),
@@ -243,7 +244,8 @@ class Crossbar:
                  cols_muxed: int,
                  technology: int,
                  adc_resolution: int,
-                 read_pulse_width: float):
+                 read_pulse_width: float,
+                 latency: float):
 
         self.comps = []
         self.sequential = 1 if sequential else 2
@@ -254,6 +256,7 @@ class Crossbar:
         self.adc_resolution = 2 ** adc_resolution + 1
         self.has_adc = adc_resolution > 0
         self.read_pulse_width = read_pulse_width
+        self.latency = latency
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
@@ -419,7 +422,8 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
     cell_off = crossbar.energy_cell(False, False)
     write_memcell_energy = cell_on + (cell_off - cell_on) * avg_cell
 
-    return stats2dict(read_memcell_energy,
+    # Only cells will have a substantial leakage impact
+    return stats2dict(read_memcell_energy + crossbar.leakage_per_cell() * crossbar.latency,
                       write_memcell_energy,
                       crossbar.area_per_cell(),
                       crossbar.leakage_per_cell())
