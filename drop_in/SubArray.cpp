@@ -386,10 +386,10 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 			} else if (conventionalParallel) { 
 				wlSwitchMatrix.CalculateArea(heightArray, NULL, NONE);
 				if (numColMuxed>1) {
-					mux.CalculateArea(NULL, widthArray, MAGIC); // CHANGED NONE -> MAGIC
+					mux.CalculateArea(NULL, widthArray, MAGIC); // Changed NONE to MAGIC
 					muxDecoder.CalculateArea(NULL, NULL, NONE);
 					double minMuxHeight = MAX(muxDecoder.height, mux.height);
-					mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE);
+					// mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE); Removed override
 				}
 				if (SARADC) {
 					sarADC.CalculateUnitArea();
@@ -464,7 +464,7 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 					mux.CalculateArea(NULL, widthArray, MAGIC); // Changed NONE to MAGIC
 					muxDecoder.CalculateArea(NULL, NULL, NONE);
 					double minMuxHeight = MAX(muxDecoder.height, mux.height);
-					mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE);
+					// mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE); Removed override
 				}
 				if (SARADC) {
 					sarADC.CalculateUnitArea();
@@ -505,7 +505,7 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 					mux.CalculateArea(NULL, widthArray, MAGIC); // Changed NONE to MAGIC
 					muxDecoder.CalculateArea(NULL, NULL, NONE);
 					double minMuxHeight = MAX(muxDecoder.height, mux.height);
-					mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE);
+					// mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE); Removed override
 				}
 				if (SARADC) {
 					sarADC.CalculateUnitArea();
@@ -540,10 +540,10 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				}
 				slSwitchMatrix.CalculateArea(NULL, widthArray, NONE);
 				if (numColMuxed > 1) {
-					mux.CalculateArea(NULL, widthArray, NONE);
+					mux.CalculateArea(NULL, widthArray, MAGIC); // Changed NONE to MAGIC
 					muxDecoder.CalculateArea(NULL, NULL, NONE);
 					double minMuxHeight = MAX(muxDecoder.height, mux.height);
-					mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE);
+					// mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE); Removed override
 				}
 				rowCurrentSenseAmp.CalculateUnitArea();
 				rowCurrentSenseAmp.CalculateArea(widthArray);
@@ -565,10 +565,10 @@ void SubArray::CalculateArea() {  //calculate layout area for total design
 				}
 				slSwitchMatrix.CalculateArea(NULL, widthArray, NONE);
 				if (numColMuxed > 1) {
-					mux.CalculateArea(NULL, widthArray, NONE);
+					mux.CalculateArea(NULL, widthArray, MAGIC); // Changed NONE to MAGIC
 					muxDecoder.CalculateArea(NULL, NULL, NONE);
 					double minMuxHeight = MAX(muxDecoder.height, mux.height);
-					mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE);
+					// mux.CalculateArea(minMuxHeight, widthArray, OVERRIDE); Removed override
 				}
 				if (SARADC) {
 					sarADC.CalculateUnitArea();
