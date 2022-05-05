@@ -45,6 +45,9 @@ PIM_PARAMS = {
     'adc_resolution':           (f'OPTIONAL: ADC resolution. Set this if to use Neurosim\'s '
                                  f'build-in ADC. Default is False.', 0),
     'read_pulse_width':         (f'OPTIONAL: Read pulse width. Default is 10ns.', 1e-8, float),
+
+    'voltage_dac_bits':        (f'OPTIONAL: Resolution of a voltage DAC for inputs.', 1, int),
+    'temporal_dac_bits':       (f'OPTIONAL: Resolution of a temporal DAC for inputs.', 1, int),
 }
 
 ADDER_PARAMS = {
@@ -113,6 +116,8 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
         'adc_resolution': attrs['adc_resolution'],
         'read_pulse_width': attrs['read_pulse_width'],
         'latency': attrs['latency'],
+        'voltage_dac_bits': attrs['voltage_dac_bits'],
+        'temporal_dac_bits': attrs['temporal_dac_bits'],
     }
     if key not in CACHE:
         CACHE[key] = neurointerface.Crossbar(**attrs)
@@ -172,6 +177,10 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
         f'Max pool window size must be >=1. Given: {to_pass["window_size"]}'
     assert to_pass['n_adder_tree_inputs'] > 0, \
         f'Number of adder tree inputs must be >=1. Given: {to_pass["n_adder_tree_inputs"]}'
+    assert to_pass['voltage_dac_bits'] > 0, \
+        f'Voltage DAC bits must be >=1. Given: {to_pass["voltage_dac_bits"]}'
+    assert to_pass['temporal_dac_bits'] > 0, \
+        f'Temporal DAC bits must be >=1. Given: {to_pass["temporal_dac_bits"]}'
 
     if not os.path.exists(to_pass['cell_config']):
         cell_config = os.path.join(SCRIPT_DIR, 'cells', to_pass['cell_config'] + '.cell')

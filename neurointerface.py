@@ -245,7 +245,9 @@ class Crossbar:
                  technology: int,
                  adc_resolution: int,
                  read_pulse_width: float,
-                 latency: float):
+                 latency: float,
+                 voltage_dac_bits: int,
+                 temporal_dac_bits: int):
 
         self.comps = []
         self.sequential = 1 if sequential else 2
@@ -257,6 +259,8 @@ class Crossbar:
         self.has_adc = adc_resolution > 0
         self.read_pulse_width = read_pulse_width
         self.latency = latency
+        self.voltage_dac_bits = voltage_dac_bits
+        self.temporal_dac_bits = temporal_dac_bits
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
@@ -406,7 +410,12 @@ def rowcol_stats(crossbar: Crossbar, avg_input: float, avg_cell: float, kind: st
 
 def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for row energy, area, and leakage. """
-    return rowcol_stats(crossbar, avg_input, avg_cell, 'row')
+    # If there are multiple voltage DAC levels, add one row driver for each level.
+    # The drivers can be attached to different voltage rails.
+    stats = rowcol_stats(crossbar, avg_input, avg_cell, 'row')
+    stats_dac = rowcol_stats(crossbar, avg_input, avg_cell, 'rowdac')
+    stats['Area'] = stats['Area'] + stats_dac['Area'] * (2 ** crossbar.voltage_dac_bits - 1)
+    return stats
 
 def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for column energy, area, and leakage. """
@@ -416,14 +425,16 @@ def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
 def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     cell_on = crossbar.energy_cell(True, True) # Cell energy from driving current through cell
     cell_off = crossbar.energy_cell(True, False)
-    
+
     read_memcell_energy = (cell_off + (cell_on - cell_off) * avg_cell) * avg_input
     cell_on = crossbar.energy_cell(False, True) # Cell energy from driving current through cell
     cell_off = crossbar.energy_cell(False, False)
     write_memcell_energy = cell_on + (cell_off - cell_on) * avg_cell
 
     # Only cells will have a substantial leakage impact
-    return stats2dict(read_memcell_energy + crossbar.leakage_per_cell() * crossbar.latency,
+    # Also multiply read energy by temporal DAC bits
+    return stats2dict(read_memcell_energy * (2 ** crossbar.temporal_dac_bits - 1)
+                      + crossbar.leakage_per_cell() * crossbar.latency,
                       write_memcell_energy,
                       crossbar.area_per_cell(),
                       crossbar.leakage_per_cell())
