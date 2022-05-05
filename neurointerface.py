@@ -415,6 +415,7 @@ def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
     stats = rowcol_stats(crossbar, avg_input, avg_cell, 'row')
     stats_dac = rowcol_stats(crossbar, avg_input, avg_cell, 'rowdac')
     stats['Area'] = stats['Area'] + stats_dac['Area'] * (2 ** crossbar.voltage_dac_bits - 1)
+    stats['Leakage'] = stats['Leakage'] + stats_dac['Leakage'] * (2 ** crossbar.voltage_dac_bits - 1)
     return stats
 
 def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
