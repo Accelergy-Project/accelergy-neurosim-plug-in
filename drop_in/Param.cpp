@@ -92,6 +92,8 @@ Param::Param() {}
 
 void Param::Initialize() {
 	/***************************************** user defined design options and parameters *****************************************/
+	numColPerSynapse = 1; // Unused by Timeloop. Must set or we get a divide by 0 exception.
+
 	// TIMELOOP: Doesn't matter. We just do parallel.
 	operationmode = rint("sequential"); // 1: conventionalSequential (Use several multi-bit RRAM as one synapse)
 								        // 2: conventionalParallel (Use several multi-bit RRAM as one synapse)
