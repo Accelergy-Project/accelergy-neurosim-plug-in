@@ -337,27 +337,28 @@ if __name__ == '__main__':
             'technology': 32,
             'rows': 128,
             'cols': 128,
-            'cols_active_at_once': 256,
+            'cols_active_at_once': 128,
             'cell_config': 'nvmexplorer_RRAM',
             'average_input_value': 1,
             'average_cell_value': 1,
             'sequential': 1,
-            'adc_resolution': 0},
+            'adc_resolution': 0,
+            'latency': 100},
     }
 
     a = []
-    #for i in [32, 45]:
-    #    x['attributes']['technology'] = i
-    #    a.append(nw.estimate_energy(x))
+    for i in [32, 45]:
+        cols['attributes']['technology'] = i
+        a.append(nw.estimate_energy(cols))
 
     #for adc_resolution in range(1, 12):
     #    cols['attributes']['adc_resolution'] = adc_resolution
     #    a.append(nw.estimate_energy(cols))
-    import copy
-    for i in range(1, 128):
-        misc['attributes']['n_adder_tree_inputs'] = i
-        misc2 = copy.deepcopy(misc)
-        misc2['action_name'] = 'idle'
-        a.append(nw.estimate_energy(misc2))
+    #import copy
+    #for i in range(1, 128):
+    #    misc['attributes']['n_adder_tree_inputs'] = i
+    #    misc2 = copy.deepcopy(misc)
+    #    misc2['action_name'] = 'idle'
+    #    a.append(nw.estimate_energy(misc2))
 
     print('\n'.join(str(x) for x in a))
