@@ -39,6 +39,9 @@ We support four components for estimating PIM crossbar energy. They take the fol
 - average_cell_value: Like average_input_value, but with encoded weights. For example, if weights are encoded as values from 1-10 with an average of 7, average_cell_value is 0.7.
 - sequential: A binary value. If true, rows are addressed and accessed one at a time. Otherwise, rows are to be activated in large blocks and not addressed. Setting this to TRUE can simulate a PIM memory.
 - adc_resolution: This is the number of bits of the ADC used for readout. ADC is a flash ADC. To exclude the ADC and use your own, set adc_resolution to 0.
+- read_pulse_width: Number of ns each read pulse lasts.
+- voltage_dac_bits: Number of bits resolution for a voltage-based DAC on each row. Voltage DACs use a row switch connected to a power rail for each possible input value.
+- temporal_dac_bits: Number of bits resolution for a temporal DAC on each row. Temporal DACs enode inputs as an amount of time the row stays high.
 
 ## Peripheral Components
 We support other digital components from NeuroSim. These components are useful in many places-- not just PIM!
