@@ -160,20 +160,20 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
                              f'{passtype}. Given: "{attributes[p]}" Usage: \n{dict_to_str(docs)}')
 
     tn = PERMITTED_TECH_NODES
-    assert to_pass['rows'] > 8, \
+    assert to_pass['rows'] > =8, \
         f'Rows must be >=8. Got {to_pass["rows"]}'
-    assert to_pass['cols'] > 8, \
+    assert to_pass['cols'] >= 8, \
         f'Columns must be >=8. Given: {to_pass["columns"]}'
     assert to_pass['cols_active_at_once'] >= 1, \
         f'Columns active at once must be >=1 and divide evenly into cols. ' \
         f'Given: {to_pass["cols"]} cols, {to_pass["cols_active_at_once"]} cols active at once'
     assert min(tn) <= to_pass['technology'] <= max(tn), \
         f'Tech node must be between {max(tn)} and {min(tn)}nm. Given: {to_pass["technology"]}nm'
-    assert to_pass['precision'] > 1, \
+    assert to_pass['precision'] >= 1, \
         f'Adder resolution must be >=1. Given: {to_pass["precision"]}'
-    assert to_pass['shift_register_precision'] > 1, \
+    assert to_pass['shift_register_precision'] >= 1, \
         f'Shift register resolution must be >=1. Given: {to_pass["shift_register_precision"]}'
-    assert to_pass['pool_window'] > 1, \
+    assert to_pass['pool_window'] >= 1, \
         f'Max pool window size must be >=1. Given: {to_pass["window_size"]}'
     assert to_pass['n_adder_tree_inputs'] > 0, \
         f'Number of adder tree inputs must be >=1. Given: {to_pass["n_adder_tree_inputs"]}'
@@ -326,9 +326,9 @@ PIM_PARAMS = {
 if __name__ == '__main__':
     nw = NeuroWrapper()
     misc = {
-        'class_name': 'neurosim_adder_tree',
+        'class_name': 'neurosim_adder',
         'action_name': 'read',
-        'attributes': {'technology': 32, 'precision': 32, 'n_adder_tree_inputs': 1},
+        'attributes': {'technology': 65, 'precision': 8, 'n_adder_tree_inputs': 1},
     }
     cols = {
         'class_name': 'pim_col_drivers',
@@ -338,7 +338,7 @@ if __name__ == '__main__':
             'rows': 128,
             'cols': 128,
             'cols_active_at_once': 128,
-            'cell_config': 'nvmexplorer_RRAM',
+            'cell_config': 'nvmexplorer_SRAM',
             'average_input_value': 1,
             'average_cell_value': 1,
             'sequential': 1,
@@ -347,9 +347,10 @@ if __name__ == '__main__':
     }
 
     a = []
-    for i in [32, 45]:
-        cols['attributes']['technology'] = i
-        a.append(nw.estimate_energy(cols))
+    target = misc
+    for i in [32, 45, 65]:
+        target['attributes']['technology'] = i
+        a.append(nw.estimate_energy(target))
 
     #for adc_resolution in range(1, 12):
     #    cols['attributes']['adc_resolution'] = adc_resolution
