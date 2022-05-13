@@ -160,7 +160,7 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
                              f'{passtype}. Given: "{attributes[p]}" Usage: \n{dict_to_str(docs)}')
 
     tn = PERMITTED_TECH_NODES
-    assert to_pass['rows'] > =8, \
+    assert to_pass['rows'] >= 8, \
         f'Rows must be >=8. Got {to_pass["rows"]}'
     assert to_pass['cols'] >= 8, \
         f'Columns must be >=8. Given: {to_pass["columns"]}'
