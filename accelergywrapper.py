@@ -48,6 +48,8 @@ PIM_PARAMS = {
 
     'voltage_dac_bits':        (f'OPTIONAL: Resolution of a voltage DAC for inputs.', 1, int),
     'temporal_dac_bits':       (f'OPTIONAL: Resolution of a temporal DAC for inputs.', 1, int),
+    'temporal_spiking':        (f'OPTIONAL: Whether to use a spiking (#pulses) or a PWM (pulse  ' \
+                                f'length) approach for temporal DAC. Default is True ', True, bool),
 }
 
 ADDER_PARAMS = {
@@ -118,6 +120,7 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
         'latency': attrs['latency'],
         'voltage_dac_bits': attrs['voltage_dac_bits'],
         'temporal_dac_bits': attrs['temporal_dac_bits'],
+        'temporal_spiking': attrs['temporal_spiking'],
     }
     if key not in CACHE:
         CACHE[key] = neurointerface.Crossbar(**attrs)
