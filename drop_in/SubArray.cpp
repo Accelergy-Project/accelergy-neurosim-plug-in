@@ -5,6 +5,7 @@
 * Changes madein this file:
 *	Disabled CMOS access width calculation, allowing users to select their own width
 *   Set column mux layout to MAGIC
+*	Added SRAM cell access energy calculation for SRAM pim designs
 *
 * Copyright (c) 2015-2017
 * School of Electrical, Computer and Energy Engineering, Arizona State University
@@ -150,6 +151,8 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 		resCellAccess = CalculateOnResistance(cell.widthAccessCMOS * tech.featureSize, NMOS, inputParameter.temperature, tech);
 		capCellAccess = CalculateDrainCap(cell.widthAccessCMOS * tech.featureSize, NMOS, cell.widthInFeatureSize * tech.featureSize, tech);
 		cell.capSRAMCell = capCellAccess + CalculateDrainCap(cell.widthSRAMCellNMOS * tech.featureSize, NMOS, cell.widthInFeatureSize * tech.featureSize, tech) + CalculateDrainCap(cell.widthSRAMCellPMOS * tech.featureSize, PMOS, cell.widthInFeatureSize * tech.featureSize, tech) + CalculateGateCap(cell.widthSRAMCellNMOS * tech.featureSize, tech) + CalculateGateCap(cell.widthSRAMCellPMOS * tech.featureSize, tech);
+		capRow2 += CalculateGateCap(cell.widthAccessCMOS * tech.featureSize, tech) * numCol;          //sum up all the gate cap of access CMOS, as the row cap NEW NEW NEW
+		capCol += CalculateDrainCap(cell.widthAccessCMOS * tech.featureSize, NMOS, cell.widthInFeatureSize * tech.featureSize, tech) * numRow;	// If capCol is found to be too large, increase cell.widthInFeatureSize to relax the limit NEW NEW NEW
 
 		if (conventionalSequential) {
 			wlDecoder.Initialize(REGULAR_ROW, (int)ceil(log2(numRow)), false, false);
@@ -1034,7 +1037,14 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				// Array
 				readDynamicEnergyArray = 0; // Just BL discharging
 				writeDynamicEnergyArray = cell.capSRAMCell * tech.vdd * tech.vdd * 2 * numCol * activityColWrite * numRow * activityRowWrite;    // flip Q and Q_bar
-
+				double capBL = lengthCol * 0.2e-15/1e-6; // NEW
+				readDynamicEnergyArray += capBL * cell.readVoltage * cell.readVoltage * numReadCellPerOperationNeuro; // Selected BLs activityColWrite // NEW
+				readDynamicEnergyArray += capRow2 * tech.vdd * tech.vdd * numRow * activityRowRead; // Selected WL // NEW
+				readDynamicEnergyArray *= numColMuxed; // NEW
+				// cout << "ReadDynamicEnergyArray: " << readDynamicEnergyArray << endl;
+				// cout << "+= capBL * cell.readVoltage * cell.readVoltage * numReadCellPerOperationNeuro: " << capBL * cell.readVoltage * cell.readVoltage * numReadCellPerOperationNeuro << endl;
+				// cout << "+= capRow2 * tech.vdd * tech.vdd * numRow * activityRowRead: " << capRow2 * tech.vdd * tech.vdd * numRow * activityRowRead << endl;
+				// cout << "*= numColMuxed: " << numColMuxed << endl;
 				// Read
 				readDynamicEnergy += wlDecoder.readDynamicEnergy;
 				readDynamicEnergy += precharger.readDynamicEnergy;
@@ -1086,6 +1096,15 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				// Array
 				readDynamicEnergyArray = 0; // Just BL discharging
 				writeDynamicEnergyArray = cell.capSRAMCell * tech.vdd * tech.vdd * 2 * numCol * activityColWrite * numRow * activityRowWrite;    // flip Q and Q_bar
+				double capBL = lengthCol * 0.2e-15/1e-6; // NEW
+				readDynamicEnergyArray += capBL * cell.readVoltage * cell.readVoltage * numReadCellPerOperationNeuro; // Selected BLs activityColWrite // NEW
+				readDynamicEnergyArray += capRow2 * tech.vdd * tech.vdd * numRow * activityRowRead; // Selected WL // NEW
+				readDynamicEnergyArray *= numColMuxed; // NEW
+				// cout << "ReadDynamicEnergyArray: " << readDynamicEnergyArray << endl;
+				// cout << "+= capBL * cell.readVoltage * cell.readVoltage * numReadCellPerOperationNeuro: " << capBL * cell.readVoltage * cell.readVoltage * numReadCellPerOperationNeuro << endl;
+				// cout << "+= capRow2 * tech.vdd * tech.vdd * numRow * activityRowRead: " << capRow2 * tech.vdd * tech.vdd * numRow * activityRowRead << endl;
+				// cout << "*= numColMuxed: " << numColMuxed << endl;
+
 				// Read
 				readDynamicEnergy += wlSwitchMatrix.readDynamicEnergy;
 				readDynamicEnergy += precharger.readDynamicEnergy;

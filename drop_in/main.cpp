@@ -572,6 +572,7 @@ int main(int argc, char *argv[]) {
 	printf("\tDisabled memristor CMOS access width calculation, allowing users to specify.\n");
 	printf("\tCreated top-level file that calculates energy scaling for each component.\n");
 	printf("\tCreated Accelergy interfacing scripts.\n");
+	printf("\tAdded SRAM cell access energy calculation for SRAM pim designs.\n");
 	printf("================================================================================\n");
 
 	// RENAMED MAIN.CPP to main.old to avoid name conflicts
