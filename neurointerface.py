@@ -13,7 +13,7 @@ DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, 'default_config.cfg')
 NEUROSIM_PATH = os.path.join(SCRIPT_DIR, 'NeuroSim/main')
 CFG_WRITE_PATH = os.path.join(SCRIPT_DIR, './neurosim_input.cfg')
 
-DEBUG = False
+DEBUG = True
 
 # ==================================================================================================
 # NVSIM/NVMEXPLORER -> NEUROSIM TRANSLATIONS
@@ -52,8 +52,8 @@ NV_TO_NEURO = [
     ##
     # SRAM Configuration
     ('-AccessCMOSWidth (F):', 'widthAccessCMOS:'),
-    #('-SRAMCellNMOSWidth (F):', 'widthSRAMCellNMOS:'),
-    #('-SRAMCellPMOSWidth (F):', 'widthSRAMCellPMOS:'),
+    ('-SRAMCellNMOSWidth (F):', 'widthSRAMCellNMOS:'),
+    ('-SRAMCellPMOSWidth (F):', 'widthSRAMCellPMOS:'),
     ('-MinSenseVoltage (mV):', ('minSenseVoltage:', 1e-3)),
 
     ##
@@ -406,7 +406,8 @@ def rowcol_stats(crossbar: Crossbar, avg_input: float, avg_cell: float, kind: st
     # print(f'Read on: {read_on}. Read off: {read_off}. Read: {read}')
 
     write = write_on # Can't gate writes becasuse we still have to reset cells
-    return stats2dict(read, write, area, leakage)
+    rw_leakage = 0#leakage / (1 if kind != 'col' else crossbar.cols_muxed) * crossbar.latency
+    return stats2dict(read + rw_leakage, write + rw_leakage, area, leakage)
 
 def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for row energy, area, and leakage. """
@@ -432,7 +433,7 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
     cell_off = crossbar.energy_cell(False, False)
     write_memcell_energy = cell_on + (cell_off - cell_on) * avg_cell
 
-    # Only cells will have a substantial leakage impact
+    # Cells will have a substantial leakage impact
     # Also multiply read energy by temporal DAC bits
     return stats2dict(read_memcell_energy * (2 ** crossbar.temporal_dac_bits - 1)
                       + crossbar.leakage_per_cell() * crossbar.latency,
