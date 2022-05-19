@@ -255,7 +255,7 @@ class Crossbar:
         self.cols = cols
         self.cols_muxed = cols_muxed
         self.technology = technology
-        self.adc_resolution = 2 ** adc_resolution + 1
+        self.num_output_levels = 2 ** adc_resolution - 1
         self.has_adc = adc_resolution > 0
         self.read_pulse_width = read_pulse_width
         self.latency = latency
@@ -271,7 +271,7 @@ class Crossbar:
         # Make sure cols_muxed is set before cols so that you don't get part of the name
         # overwritten
         my_set = ['sequential', 'cols_muxed', 'rows', 'cols',
-                  'technology', 'adc_resolution', 'read_pulse_width']
+                  'technology', 'num_output_levels', 'read_pulse_width']
         for to_set in my_set:
             if DEBUG:
                 print(f'\tSetting {to_set} to {getattr(self, to_set)}')
@@ -406,7 +406,8 @@ def rowcol_stats(crossbar: Crossbar, avg_input: float, avg_cell: float, kind: st
     # print(f'Read on: {read_on}. Read off: {read_off}. Read: {read}')
 
     write = write_on # Can't gate writes becasuse we still have to reset cells
-    return stats2dict(read, write, area, leakage)
+    rw_leakage = 0#leakage / (1 if kind != 'col' else crossbar.cols_muxed) * crossbar.latency
+    return stats2dict(read + rw_leakage, write + rw_leakage, area, leakage)
 
 def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for row energy, area, and leakage. """
@@ -432,7 +433,7 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
     cell_off = crossbar.energy_cell(False, False)
     write_memcell_energy = cell_on + (cell_off - cell_on) * avg_cell
 
-    # Only cells will have a substantial leakage impact
+    # Cells will have a substantial leakage impact
     # Also multiply read energy by temporal DAC bits
     return stats2dict(read_memcell_energy * (2 ** crossbar.temporal_dac_bits - 1)
                       + crossbar.leakage_per_cell() * crossbar.latency,
@@ -479,8 +480,8 @@ if __name__ == '__main__':
     COLS = 256
     COLS_MUXED = 8
     TECHNODE = 32
-    ADC_RESOLUTION = 256
-    CROSSBAR = Crossbar(SEQUENTIAL, ROWS, COLS, COLS_MUXED, TECHNODE, ADC_RESOLUTION)
+    adc_resolution = 12
+    CROSSBAR = Crossbar(SEQUENTIAL, ROWS, COLS, COLS_MUXED, TECHNODE, adc_resolution)
 
     CELLFILE = 'cells/isaac.cell'
 

@@ -483,13 +483,8 @@ void CalculateEnergy(MemCell& cell) {
 			// Neurosim charges SRAM gate flip energy as array energy. Calculate by flipping exactly
 			// One SRAM cell
 			cellWriteEnergyLoHalfSelected = cellWriteEnergyHiHalfSelected = 0;
-			printf("Width of SRAM cell: %e\n", cell.widthSRAMCellNMOS * tech.featureSize);
-			printf("Width of SRAM cell: %e\n", cell.widthSRAMCellPMOS * tech.featureSize);
-			printf("Temperature: %e\n", inputParameter.temperature);
-			printf("Tech feature size: %e\n", tech.featureSize);
 			cellLeakage = CalculateGateLeakage(INV, 1, cell.widthSRAMCellNMOS * tech.featureSize,
 						cell.widthSRAMCellPMOS * tech.featureSize, inputParameter.temperature, tech) * tech.vdd * 2;
-			printf("Cell leakage: %e\n", cellLeakage);
 			CalculateEnergy(cell, 0, 1, 0, 1, 0);
 			cellWriteEnergyLo = cellWriteEnergyHi = subArray->writeDynamicEnergyArray;
 		}
@@ -572,6 +567,7 @@ int main(int argc, char *argv[]) {
 	printf("\tDisabled memristor CMOS access width calculation, allowing users to specify.\n");
 	printf("\tCreated top-level file that calculates energy scaling for each component.\n");
 	printf("\tCreated Accelergy interfacing scripts.\n");
+	printf("\tAdded SRAM cell access energy calculation for SRAM pim designs.\n");
 	printf("================================================================================\n");
 
 	// RENAMED MAIN.CPP to main.old to avoid name conflicts
