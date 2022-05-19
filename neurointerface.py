@@ -13,7 +13,7 @@ DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, 'default_config.cfg')
 NEUROSIM_PATH = os.path.join(SCRIPT_DIR, 'NeuroSim/main')
 CFG_WRITE_PATH = os.path.join(SCRIPT_DIR, './neurosim_input.cfg')
 
-DEBUG = True
+DEBUG = False
 
 # ==================================================================================================
 # NVSIM/NVMEXPLORER -> NEUROSIM TRANSLATIONS
@@ -255,7 +255,7 @@ class Crossbar:
         self.cols = cols
         self.cols_muxed = cols_muxed
         self.technology = technology
-        self.adc_resolution = 2 ** adc_resolution + 1
+        self.num_output_levels = 2 ** adc_resolution - 1
         self.has_adc = adc_resolution > 0
         self.read_pulse_width = read_pulse_width
         self.latency = latency
@@ -271,7 +271,7 @@ class Crossbar:
         # Make sure cols_muxed is set before cols so that you don't get part of the name
         # overwritten
         my_set = ['sequential', 'cols_muxed', 'rows', 'cols',
-                  'technology', 'adc_resolution', 'read_pulse_width']
+                  'technology', 'num_output_levels', 'read_pulse_width']
         for to_set in my_set:
             if DEBUG:
                 print(f'\tSetting {to_set} to {getattr(self, to_set)}')
@@ -480,8 +480,8 @@ if __name__ == '__main__':
     COLS = 256
     COLS_MUXED = 8
     TECHNODE = 32
-    ADC_RESOLUTION = 256
-    CROSSBAR = Crossbar(SEQUENTIAL, ROWS, COLS, COLS_MUXED, TECHNODE, ADC_RESOLUTION)
+    adc_resolution = 12
+    CROSSBAR = Crossbar(SEQUENTIAL, ROWS, COLS, COLS_MUXED, TECHNODE, adc_resolution)
 
     CELLFILE = 'cells/isaac.cell'
 
