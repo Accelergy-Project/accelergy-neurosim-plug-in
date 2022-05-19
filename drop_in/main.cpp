@@ -281,7 +281,6 @@ vector<double> GetColumnResistance(MemCell& cell, int nCellsOn, int nRowsConnect
 		columnG *= nRowsConnected; // Multiplied by number of connected rows
     } else if (cell.memCellType == Type::SRAM) {	
         // SRAM: weight value do not affect sense energy --> read energy calculated in subArray.cpp (based on wireRes wireCap etc)
-        // SRAM: weight value do not affect sense energy --> read energy calculated in subArray.cpp (based on wireRes wireCap etc)
         double totalWireResistance = (double) (resCellAccess + row * param->wireResistanceCol);
         columnG += (double) 1.0/totalWireResistance;
 		columnG *= nRowsConnected;
