@@ -14,7 +14,7 @@ DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, 'default_config.cfg')
 NEUROSIM_PATH = os.path.join(SCRIPT_DIR, 'NeuroSim/main')
 CFG_WRITE_PATH = os.path.join(SCRIPT_DIR, './neurosim_input.cfg')
 
-DEBUG = True
+DEBUG = False
 
 # ==================================================================================================
 # NVSIM/NVMEXPLORER -> NEUROSIM TRANSLATIONS
@@ -249,7 +249,9 @@ class Crossbar:
                  latency: float,
                  voltage_dac_bits: int,
                  temporal_dac_bits: int,
-                 temporal_spiking: bool):
+                 temporal_spiking: bool,
+                 adc_action_share: float,
+                 adc_area_share: float,):
 
         self.comps = []
         self.sequential = 1 if sequential else 2
@@ -263,7 +265,11 @@ class Crossbar:
         self.latency = latency
         self.voltage_dac_bits = voltage_dac_bits
         self.temporal_dac_bits = temporal_dac_bits
-        self.temporal_spiking = temporal_spiking
+        self.temporal_spiking = temporal_spiking        
+        self.adc_action_share = adc_action_share
+        self.adc_area_share = adc_area_share
+
+        self.max_activation_time = 2 ** (self.temporal_dac_bits - 1)
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
@@ -301,6 +307,13 @@ class Crossbar:
         if DEBUG:
             print(results)
         self.comps = [Component(line) for line in results.split('\n') if '<COMPONENT>' in line]
+        for c in self.comps:
+            if 'adc' in c.name:
+                c.area *= self.adc_area_share
+                for a in dir(c):
+                    if 'energy' in a:
+                        setattr(c, a, getattr(c, a) * self.adc_action_share)
+
         if not self.comps:
             print("\n\nERROR: NeuroSIM returned no components. NeuroSIM output below.")
             print('| ' + results.replace('\n', '\n| ') + '  ')
@@ -417,9 +430,10 @@ def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
     """ Returns dictionary of stats for row energy, area, and leakage. """
     # For temporal DAC non-PWM mode, inputs are activated multiple times. For PWM mode, inputs are
     # held high for longer so no extra switching is needed.
-    avg_input *= mean([2 ** x for x in range(crossbar.temporal_dac_bits)])
+    if crossbar.temporal_spiking:
+        avg_input *= crossbar.max_activation_time
     # For voltage DAC, some inputs are activated with a lower voltage
-    avg_input /= mean([2 ** x for x in range(crossbar.voltage_dac_bits )])
+    avg_input /= 2 ** (crossbar.voltage_dac_bits - 1)
     print(f'Scaling row energy by {avg_input}')
     stats = rowcol_stats(crossbar, avg_input, avg_cell, 'row')
     stats_dac = rowcol_stats(crossbar, avg_input, avg_cell, 'rowdac')
@@ -447,7 +461,7 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
 
     # Cells will have a substantial leakage impact
     # Also multiply read energy by temporal DAC bits
-    return stats2dict(read_memcell_energy * (2 ** crossbar.temporal_dac_bits - 1)
+    return stats2dict(read_memcell_energy * crossbar.max_activation_time
                       + crossbar.leakage_per_cell() * crossbar.latency,
                       write_memcell_energy,
                       crossbar.area_per_cell(),

@@ -50,6 +50,12 @@ PIM_PARAMS = {
     'temporal_dac_bits':       (f'OPTIONAL: Resolution of a temporal DAC for inputs.', 1, int),
     'temporal_spiking':        (f'OPTIONAL: Whether to use a spiking (#pulses) or a PWM (pulse  ' \
                                 f'length) approach for temporal DAC. Default is True ', True, bool),
+    'adc_action_share':        (f'OPTIONAL: Manual scaling of ADC energy/op. Use this to simulate'
+                                f' an ADC more or less efficient than Neurosim\'s build-in ADC. ',
+                                1, float),
+    'adc_area_share':          (f'OPTIONAL: Manual scaling of ADC area. Use this to simulate'
+                                f' an ADC larger or smaller than Neurosim\'s build-in ADC. ',
+                                1, float),
 }
 
 ADDER_PARAMS = {
@@ -121,6 +127,8 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
         'voltage_dac_bits': attrs['voltage_dac_bits'],
         'temporal_dac_bits': attrs['temporal_dac_bits'],
         'temporal_spiking': attrs['temporal_spiking'],
+        'adc_action_share': attrs['adc_action_share'],
+        'adc_area_share': attrs['adc_area_share'],
     }
     if key not in CACHE:
         CACHE[key] = neurointerface.Crossbar(**attrs)
