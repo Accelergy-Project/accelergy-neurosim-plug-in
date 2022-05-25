@@ -319,6 +319,7 @@ scaleResults CalculateScaling(compStat c, bool isWrite, int numCellsOn) {
 	int* scalecol = isWrite ? &colwrites : &colreads;
 	double* energy = std::get<3>(c) ? std::get<3>(c) : &fu->readDynamicEnergy;
 	if(isWrite) energy = std::get<4>(c) ? std::get<4>(c) : &fu->writeDynamicEnergy;
+	*energy = 0;
 	int nrow = subArray->numRow;
 	int ncol = subArray->numCol;
 	
