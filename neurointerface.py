@@ -2,6 +2,7 @@
 Interface for Neurosim. Exposes row, column, and cell energy in terms of OFF and ON actions. Also
 includes integration of cell files from NVSim and NVMExplorer.
 """
+from statistics import mean
 from typing import Dict, List, Tuple
 from numbers import Number
 import os
@@ -247,7 +248,10 @@ class Crossbar:
                  read_pulse_width: float,
                  latency: float,
                  voltage_dac_bits: int,
-                 temporal_dac_bits: int):
+                 temporal_dac_bits: int,
+                 temporal_spiking: bool,
+                 adc_action_share: float,
+                 adc_area_share: float,):
 
         self.comps = []
         self.sequential = 1 if sequential else 2
@@ -255,12 +259,17 @@ class Crossbar:
         self.cols = cols
         self.cols_muxed = cols_muxed
         self.technology = technology
-        self.num_output_levels = 2 ** adc_resolution - 1
+        self.num_output_levels = 2 ** adc_resolution
         self.has_adc = adc_resolution > 0
         self.read_pulse_width = read_pulse_width
         self.latency = latency
         self.voltage_dac_bits = voltage_dac_bits
         self.temporal_dac_bits = temporal_dac_bits
+        self.temporal_spiking = temporal_spiking        
+        self.adc_action_share = adc_action_share
+        self.adc_area_share = adc_area_share
+
+        self.max_activation_time = 2 ** (self.temporal_dac_bits - 1)
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
@@ -298,6 +307,13 @@ class Crossbar:
         if DEBUG:
             print(results)
         self.comps = [Component(line) for line in results.split('\n') if '<COMPONENT>' in line]
+        for c in self.comps:
+            if 'adc' in c.name:
+                c.area *= self.adc_area_share
+                for a in dir(c):
+                    if 'energy' in a:
+                        setattr(c, a, getattr(c, a) * self.adc_action_share)
+
         if not self.comps:
             print("\n\nERROR: NeuroSIM returned no components. NeuroSIM output below.")
             print('| ' + results.replace('\n', '\n| ') + '  ')
@@ -327,9 +343,10 @@ class Crossbar:
 
     def energy_on(self, kind: str, read: bool, hi: bool) -> float:
         """ Returns the energy of running all peripherals and sending a logic '1'. """
-        # Do not include ADC: Any ON energy in ADC is due to ON cells.
-        comps = [c for c in self.get_components(read, hi) if kind in c.name]
+        # Grab all components and filter by matching action
+        comps = self.get_components(read, hi) 
         on_energy = sum(getattr(c, f'energy_per_{kind.lower()}', 0) for c in comps)
+        # Also add in base activation energy of matching components
         return on_energy + self.energy_off(kind, read, hi)
 
     def energy_cell(self, read: bool, hi: bool) -> float:
@@ -411,12 +428,21 @@ def rowcol_stats(crossbar: Crossbar, avg_input: float, avg_cell: float, kind: st
 
 def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for row energy, area, and leakage. """
-    # If there are multiple voltage DAC levels, add one row driver for each level.
-    # The drivers can be attached to different voltage rails.
+    # For temporal DAC non-PWM mode, inputs are activated multiple times. For PWM mode, inputs are
+    # held high for longer so no extra switching is needed.
+    if crossbar.temporal_spiking:
+        avg_input *= crossbar.max_activation_time
+    # For voltage DAC, some inputs are activated with a lower voltage
+    avg_input /= 2 ** (crossbar.voltage_dac_bits - 1)
+    print(f'Scaling row energy by {avg_input}')
     stats = rowcol_stats(crossbar, avg_input, avg_cell, 'row')
     stats_dac = rowcol_stats(crossbar, avg_input, avg_cell, 'rowdac')
+
+    # If there are multiple voltage DAC levels, add one row driver for each level.
+    # The drivers can be attached to different voltage rails.
     stats['Area'] = stats['Area'] + stats_dac['Area'] * (2 ** crossbar.voltage_dac_bits - 1)
     stats['Leakage'] = stats['Leakage'] + stats_dac['Leakage'] * (2 ** crossbar.voltage_dac_bits - 1)
+    print(f'Row stats: {stats}')
     return stats
 
 def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
@@ -435,7 +461,7 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
 
     # Cells will have a substantial leakage impact
     # Also multiply read energy by temporal DAC bits
-    return stats2dict(read_memcell_energy * (2 ** crossbar.temporal_dac_bits - 1)
+    return stats2dict(read_memcell_energy * crossbar.max_activation_time
                       + crossbar.leakage_per_cell() * crossbar.latency,
                       write_memcell_energy,
                       crossbar.area_per_cell(),
