@@ -405,7 +405,7 @@ void CalculateEnergy(MemCell& cell) {
 	//		RowDr: Row components
 	//		RowDrDAC: Row components + multiplied for multiple input voltage levels
 	//		ColRd: Column components
-	xbarComps.push_back(compStat("Array", 		  		subArray, 						0, &subArray->readDynamicEnergyArray, &subArray->writeDynamicEnergyArray, subArray->numColMuxed, 1));
+	xbarComps.push_back(compStat("Array", 		  		subArray, 						0, &subArray->readDynamicEnergyArray, &subArray->writeDynamicEnergyArray, subArray->numCol, subArray->numColMuxed));
 	xbarComps.push_back(compStat("Row(WLDec)",   		&subArray->wlDecoder, 			0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
 	xbarComps.push_back(compStat("RowDAC(WLDrvNew)",  	&subArray->wlNewDecoderDriver,	0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
 	xbarComps.push_back(compStat("RowDAC(WLDrv)",		&subArray->wlDecoderDriver, 	0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
