@@ -1495,12 +1495,6 @@ void SubArray::PrintProperty() {
 
 	if (cell.memCellType == Type::SRAM) {
 		
-		cout << endl << endl;
-	    cout << "Array:" << endl;
-	    cout << "Area = " << heightArray*1e6 << "um x " << widthArray*1e6 << "um = " << areaArray*1e12 << "um^2" << endl;
-	    cout << "Read Dynamic Energy = " << readDynamicEnergyArray*1e12 << "pJ" << endl;
-	    cout << "Write Dynamic Energy = " << writeDynamicEnergyArray*1e12 << "pJ" << endl;
-		
 		precharger.PrintProperty("precharger");
 		sramWriteDriver.PrintProperty("sramWriteDriver");
 		
