@@ -53,8 +53,8 @@ NV_TO_NEURO = [
     ##
     # SRAM Configuration
     ('-AccessCMOSWidth (F):', 'widthAccessCMOS:'),
-    #('-SRAMCellNMOSWidth (F):', 'widthSRAMCellNMOS:'),
-    #('-SRAMCellPMOSWidth (F):', 'widthSRAMCellPMOS:'),
+    ('-SRAMCellNMOSWidth (F):', 'widthSRAMCellNMOS:'),
+    ('-SRAMCellPMOSWidth (F):', 'widthSRAMCellPMOS:'),
     ('-MinSenseVoltage (mV):', ('minSenseVoltage:', 1e-3)),
 
     ##
