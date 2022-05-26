@@ -442,7 +442,6 @@ def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
     # The drivers can be attached to different voltage rails.
     stats['Area'] = stats['Area'] + stats_dac['Area'] * (2 ** crossbar.voltage_dac_bits - 1)
     stats['Leakage'] = stats['Leakage'] + stats_dac['Leakage'] * (2 ** crossbar.voltage_dac_bits - 1)
-    print(f'Row stats: {stats}')
     return stats
 
 def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
