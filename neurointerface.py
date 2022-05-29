@@ -269,7 +269,7 @@ class Crossbar:
         self.adc_action_share = adc_action_share
         self.adc_area_share = adc_area_share
 
-        self.max_activation_time = 2 ** (self.temporal_dac_bits - 1)
+        self.max_activation_time = 2 ** self.temporal_dac_bits - 1
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
@@ -433,8 +433,6 @@ def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
     if crossbar.temporal_spiking:
         avg_input *= crossbar.max_activation_time
     # For voltage DAC, some inputs are activated with a lower voltage
-    avg_input /= 2 ** (crossbar.voltage_dac_bits - 1)
-    print(f'Scaling row energy by {avg_input}')
     stats = rowcol_stats(crossbar, avg_input, avg_cell, 'row')
     stats_dac = rowcol_stats(crossbar, avg_input, avg_cell, 'rowdac')
 
