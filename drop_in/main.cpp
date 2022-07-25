@@ -554,6 +554,10 @@ void CalculateEnergy(MemCell& cell) {
 		printf("========================================================================================================================================================================================\n");
 		printf("Wordline capacitance: %efF\n", max(subArray->capRow1, subArray->capRow2)*1e15);
 		printf("Bitline capacitance: %efF\n", subArray->capCol*1e15);
+		auto colResistance = GetColumnResistance(cell, subArray->numRow / 2, subArray->numRow, 1);
+		subArray->CalculateLatency(rampInput, colResistance, true);
+		printf("Columns read at once: %d\n", subArray->numCol / subArray->numColMuxed);
+		printf("Minimum latency per read: %.3f ns\n", subArray->readLatency * 1e9);
 	}
 	printf("========================================================================================================================================================================================\n");
 	printf("========================================================================================================================================================================================\n");

@@ -323,6 +323,11 @@ class Crossbar:
             raise ValueError('NeuroSIM returned no components. Check the generated Neurosim input' \
                              ' config and make sure all values are populated.')
 
+        columns_at_once = nvsimget('Columns read at once:', results, False)
+        min_latency = nvsimget('Minimum latency per read:', results, False)
+        print(f'Info: Crossbar minimum latency is {min_latency:.3f} ns to read '
+              f'{columns_at_once} columns at once.')
+
     def get_components(self, read: bool, hi: bool) -> List[Component]:
         """ Returns a list of components matching the criteria """
         comps = [c for c in self.comps if c.read == read]
