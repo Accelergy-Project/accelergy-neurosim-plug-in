@@ -61,6 +61,7 @@ NV_TO_NEURO = [
     # RRAM Configuration
     (('-ResistanceOn (ohm):', '-ResistanceOnAtReadVoltage (ohm):'), 'resistanceOn:'),
     (('-ResistanceOff (ohm):', '-ResistanceOffAtReadVoltage (ohm):'), 'resistanceOff:'),
+    ('-AccessTransistorResistance (ohm):', 'accessTransistorResistance:'),
     # If the read/write mode is current, set the voltage to the current * avg resistance
     ('AVG_RES', lambda: (PARSED['resistanceOn:'] + PARSED['resistanceOff:']) / 2),
     ('AVG_CONDUCTANCE', lambda: (1 / PARSED['resistanceOn:'] + 1 / PARSED['resistanceOff:']) / 2),

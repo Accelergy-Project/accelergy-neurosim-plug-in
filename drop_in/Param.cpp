@@ -224,7 +224,7 @@ void Param::Initialize() {
 	readVoltage = rfloat("readVoltage");	                				// On-chip read voltage for memory cell
 	readPulseWidth = rfloat("readPulseWidth");             					// read pulse width in sec
 	accessVoltage = rfloat("accessVoltage");                					// Gate voltage for the transistor in 1T1R
-	resistanceAccess = resistanceOn*IR_DROP_TOLERANCE;            // resistance of access CMOS in 1T1R
+	resistanceAccess = rfloat("accessTransistorResistance"); 
 	writeVoltage = rfloat("writeVoltage");											// Enable level shifer if writeVoltage > 1.5V
 	writePulseWidth = rfloat("writePulseWidth"); //2ns
 	numWritePulse = rfloat("numWritePulse");
