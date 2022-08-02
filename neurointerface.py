@@ -444,8 +444,9 @@ def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
 
     # If there are multiple voltage DAC levels, add one row driver for each level.
     # The drivers can be attached to different voltage rails.
-    stats['Area'] = stats['Area'] + stats_dac['Area'] * (2 ** crossbar.voltage_dac_bits - 1)
-    stats['Leakage'] = stats['Leakage'] + stats_dac['Leakage'] * (2 ** crossbar.voltage_dac_bits - 1)
+    dac_scale = 2 ** (crossbar.voltage_dac_bits - 1) - 1
+    stats['Area'] = stats['Area'] + stats_dac['Area'] * dac_scale
+    stats['Leakage'] = stats['Leakage'] + stats_dac['Leakage'] * dac_scale
     return stats
 
 def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
