@@ -59,7 +59,7 @@ Class:
 
 Required parameters:
 - technology: Technology node in nm
-- precision: Number of bits to add
+- n_bits: Number of bits to add
 
 Actions:
 - add
@@ -72,14 +72,14 @@ Class:
 
 Required parameters:
 - technology: Technology node in nm
-- precision: Number of bits to add
-- shift_register_precision: Number of bits in the shift register
+- n_bits: Number of bits to add
+- shift_register_n_bits: Number of bits in the shift register
 
 Actions:
 - shift_add
 
 ## Integer Adder-Tree
-A tree of adders to accmulate many values. Each level of the tree adds with higher precision to
+A tree of adders to accmulate many values. Each level of the tree adds with higher n_bits to
 ensure no overflow.
 
 Class:
@@ -87,7 +87,7 @@ Class:
 
 Required parameters:
 - technology: Technology node in nm
-- precision: Number of bits of a leaf adder. This is the minimum precision in the tree. Each additional level will add a bit.
+- n_bits: Number of bits of a leaf adder. This is the minimum n_bits in the tree. Each additional level will add a bit.
 - n_adder_tree_inputs: Number of values to add
 
 Actions:
@@ -101,12 +101,52 @@ Class:
 
 Required parameters:
 - technology: Technology node in nm
-- precision: Number of bits for each input value
+- n_bits: Number of bits for each input value
 - pool_window: Number of values to compare
 
 Actions:
 - max_pool
 
+## Multiplexer
+An n-bit multiplexer
+
+Class:
+- mux
+
+Required parameters:
+- technology: Technology node in nm
+- n_bits: Number of bits for each input value
+- n_inputs: Number of inputs to the mux
+
+Actions:
+- max_pool
+
+## Flip-flop
+A digital flip flop
+
+Class:
+- flip_flop
+
+Required parameters:
+- technology: Technology node in nm
+- n_bits: Number of flip flop bits
+
+Actions:
+- max_pool
+
+## NOT, NAND, and NOR gates
+A digital flip flop
+
+Class:
+- not_gate
+- nand_gate
+- nor_gate
+
+Required parameters:
+- technology: Technology node in nm
+
+Actions:
+- read
 
 ### References
 [1]X. Peng, S. Huang, Y. Luo, X. Sun, and S. Yu, “DNN+NeuroSim: An End-to-End Benchmarking Framework for Compute-in-Memory Accelerators with Versatile Device Technologies,” in 2019 IEEE International Electron Devices Meeting (IEDM), Dec. 2019, p. 32.5.1-32.5.4. doi: 10.1109/IEDM19573.2019.8993491.

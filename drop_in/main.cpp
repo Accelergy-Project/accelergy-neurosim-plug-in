@@ -388,7 +388,8 @@ void CalculateEnergy(MemCell& cell) {
 	int SA_input_precision = param->rint("shift_register_precision");
 	int maxPoolWindow = param->rint("pool_window");
 	bool sramsigmoid = param->memcelltype == Type::SRAM; // false for RRAM
-	int adder_tree_inputs = param->rint("adder_tree_inputs");
+	int adder_tree_inputs = param->rint("n_adder_tree_inputs");
+	int mux_inputs = param->rint("n_mux_inputs");
 
 	// compStat entry meanings:
 	// 	Name, 
@@ -546,6 +547,49 @@ void CalculateEnergy(MemCell& cell) {
 			readLatency += adder.readLatency;
 		}
 		printStats("Adder Tree", readDynamicEnergy, 0, 0, 0, area, leakage, readLatency, false);
+
+		Mux mux = Mux(inputParameter, tech, cell);
+		RowDecoder muxDecoder = RowDecoder(inputParameter, tech, cell);
+		mux.Initialize(precision, mux_inputs, 0, true);
+		muxDecoder.Initialize(REGULAR_ROW, (int)ceil(log2(mux_inputs)), true, false);
+		mux.CalculateArea(forceWidth, forceHeight, areaModify);
+		muxDecoder.CalculateArea(forceWidth, forceHeight, areaModify);
+		mux.CalculateLatency(rampInput, capLoad, numActions);
+		muxDecoder.CalculateLatency(rampInput, capLoad, capLoad, numActions, 0);
+		mux.CalculatePower(numActions);
+		muxDecoder.CalculatePower(numActions, 0);
+		printStats("Peripheral Mux", mux.readDynamicEnergy + muxDecoder.readDynamicEnergy, 0, 0, 0, mux.area + muxDecoder.area, mux.leakage + muxDecoder.leakage, mux.readLatency + muxDecoder.readLatency, false);
+
+		DFF dff = DFF(inputParameter, tech, cell);
+		dff.Initialize(precision, clkFreq);
+		dff.CalculateArea(forceWidth, forceHeight, areaModify);
+		dff.CalculateLatency(rampInput, numActions);
+		dff.CalculatePower(numActions, precision, true);
+		printStats("Flip Flop", dff.readDynamicEnergy, 0, 0, 0, dff.area, dff.leakage, dff.readLatency, false);
+
+		// Gate code is taken from MaxPooling.cpp
+		double gatew, gateh;
+		// INV
+		double widthInvN = MIN_NMOS_SIZE * tech.featureSize;
+		double widthInvP = tech.pnSizeRatio * MIN_NMOS_SIZE * tech.featureSize;
+		EnlargeSize(&widthInvN, &widthInvP, tech.featureSize*MAX_TRANSISTOR_HEIGHT, tech);
+		CalculateGateArea(INV, 1, widthInvN, widthInvP, tech.featureSize * MAX_TRANSISTOR_HEIGHT, tech, &gateh, &gatew);
+		printStats("NOT gate", 0, 0, 0, 0, gatew * gateh, 0, 0, false);
+
+		// NAND
+		double widthNandN = 2*MIN_NMOS_SIZE * tech.featureSize;
+		double widthNandP = tech.pnSizeRatio * MIN_NMOS_SIZE * tech.featureSize;
+		EnlargeSize(&widthNandN, &widthNandP, tech.featureSize*MAX_TRANSISTOR_HEIGHT, tech);
+		CalculateGateArea(NAND, 2, widthNandN, widthNandP, tech.featureSize * MAX_TRANSISTOR_HEIGHT, tech, &gateh, &gatew);
+		printStats("NAND gate", 0, 0, 0, 0, gatew * gateh, 0, 0, false);
+		
+		// NOR1
+		double widthNorN = 4*MIN_NMOS_SIZE * tech.featureSize;
+		double widthNorP = tech.pnSizeRatio * MIN_NMOS_SIZE * tech.featureSize;
+		EnlargeSize(&widthNorN, &widthNorP, tech.featureSize*MAX_TRANSISTOR_HEIGHT, tech);
+		CalculateGateArea(NOR, 2, widthNorN, widthNorP, tech.featureSize * MAX_TRANSISTOR_HEIGHT, tech, &gateh, &gatew);
+		printStats("NOR gate", 0, 0, 0, 0, gatew * gateh, 0, 0, false);
+
 	}
 	bool printOther = true;
 	if(printOther) {
