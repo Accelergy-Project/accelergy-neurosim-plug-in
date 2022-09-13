@@ -59,31 +59,43 @@ PIM_PARAMS = {
 }
 
 ADDER_PARAMS = {
-    'precision':                (f'REQUIRED: # Bits of the adder.', 8),
+    'n_bits':                   (f'REQUIRED: # Bits of the adder.', 8),
 }
 SHIFT_ADD_PARAMS = {
-    'technology':               (f'REQUIRED: Technology node. Must be between 7 and 130nm.', 32),
-    'precision':                (f'REQUIRED: # Bits of the adder.', 8),
-    'shift_register_precision': (f'REQUIRED: # Bits of the shift register.', 16),
+    'n_bits':                   (f'REQUIRED: # Bits of the adder.', 8),
+    'shift_register_n_bits':    (f'REQUIRED: # Bits of the shift register.', 16),
 }
 MAX_POOL_PARAMS = {
-    'technology':               (f'REQUIRED: Technology node. Must be between 7 and 130nm.', 32),
-    'precision':                (f'REQUIRED: # Bits.', 8),
+    'n_bits':                   (f'REQUIRED: # Bits.', 8),
     'pool_window':              (f'REQUIRED: Window size of max pooling.', 2),
 }
 ADDER_TREE_PARAMS = {
-    'precision':                (f'REQUIRED: # Bits of the leaf adder.', 8),
+    'n_bits':                   (f'REQUIRED: # Bits of the leaf adder.', 8),
     'n_adder_tree_inputs':      (f'REQUIRED: Number of inputs to the adder tree.', 2),
 }
-
-PARAM_DICTS = [PIM_PARAMS, ADDER_PARAMS, SHIFT_ADD_PARAMS, MAX_POOL_PARAMS, ADDER_TREE_PARAMS]
+MUX_PARAMS = {
+    'n_mux_inputs':             (f'REQUIRED: Number of inputs to the mux.', 2),
+    'n_bits':                   (f'REQUIRED: # Bits of the mux.', 8),
+}
+FLIP_FLOP_PARAMS = {
+    'n_bits':                   (f'REQUIRED: # Bits of flip-flop.', 8),
+}
+PARAM_DICTS = [
+    PIM_PARAMS, ADDER_PARAMS, SHIFT_ADD_PARAMS, 
+    MAX_POOL_PARAMS, ADDER_TREE_PARAMS, MUX_PARAMS, FLIP_FLOP_PARAMS
+]
 for p in PARAM_DICTS:
     p['technology'] = (f'REQUIRED: Technology node. Must be between {max(PERMITTED_TECH_NODES)}  '
                        f'and {min(PERMITTED_TECH_NODES)}nm.', 32)
 
-PERIPHERAL_PARAMS = {**ADDER_PARAMS, **SHIFT_ADD_PARAMS, **MAX_POOL_PARAMS, **ADDER_TREE_PARAMS}
-ALL_PARAMS = {**PIM_PARAMS, **ADDER_PARAMS, **SHIFT_ADD_PARAMS, **MAX_POOL_PARAMS,
-              **ADDER_TREE_PARAMS}
+PERIPHERAL_PARAMS = {
+    **ADDER_PARAMS, **SHIFT_ADD_PARAMS, **MAX_POOL_PARAMS, 
+    **ADDER_TREE_PARAMS, **MUX_PARAMS, **FLIP_FLOP_PARAMS
+}
+ALL_PARAMS = {
+    **PIM_PARAMS, **ADDER_PARAMS, **SHIFT_ADD_PARAMS, **MAX_POOL_PARAMS, 
+    **ADDER_TREE_PARAMS, **MUX_PARAMS, **FLIP_FLOP_PARAMS
+}
 
 # Actions from Accelergy and their translations
 READ_ACTIONS = [
@@ -102,6 +114,11 @@ SUPPORTED_CLASSES = {
     'neurosim_adder':       (neurointerface.adder_stats, ADDER_PARAMS),
     'neurosim_adder_tree':  (neurointerface.adder_tree_stats, ADDER_TREE_PARAMS),
     'max_pool':             (neurointerface.max_pool_stats, MAX_POOL_PARAMS),
+    'mux':                  (neurointerface.mux_stats, MUX_PARAMS),
+    'flip_flop':            (neurointerface.flip_flop_stats, FLIP_FLOP_PARAMS),
+    'not_gate':             (neurointerface.not_gate_stats, {}),
+    'nand_gate':            (neurointerface.nand_gate_stats, {}),
+    'nor_gate':             (neurointerface.nor_gate_stats, {}),
 }
 
 PRINTED_INTERP_WARNING = False
@@ -180,14 +197,16 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
         f'Given: {to_pass["cols"]} cols, {to_pass["cols_active_at_once"]} cols active at once'
     assert min(tn) <= to_pass['technology'] <= max(tn), \
         f'Tech node must be between {max(tn)} and {min(tn)}nm. Given: {to_pass["technology"]}nm'
-    assert to_pass['precision'] >= 1, \
-        f'Adder resolution must be >=1. Given: {to_pass["precision"]}'
-    assert to_pass['shift_register_precision'] >= 1, \
-        f'Shift register resolution must be >=1. Given: {to_pass["shift_register_precision"]}'
+    assert to_pass['n_bits'] >= 1, \
+        f'Adder resolution must be >=1. Given: {to_pass["n_bits"]}'
+    assert to_pass['shift_register_n_bits'] >= 1, \
+        f'Shift register resolution must be >=1. Given: {to_pass["shift_register_n_bits"]}'
     assert to_pass['pool_window'] >= 1, \
         f'Max pool window size must be >=1. Given: {to_pass["window_size"]}'
     assert to_pass['n_adder_tree_inputs'] > 0, \
         f'Number of adder tree inputs must be >=1. Given: {to_pass["n_adder_tree_inputs"]}'
+    assert to_pass['n_mux_inputs'] > 0, \
+        f'Number of mux inputs must be >=1. Given: {to_pass["n_mux_inputs"]}'
     assert to_pass['voltage_dac_bits'] > 0, \
         f'Voltage DAC bits must be >=1. Given: {to_pass["voltage_dac_bits"]}'
     assert to_pass['temporal_dac_bits'] > 0, \
@@ -337,9 +356,9 @@ PIM_PARAMS = {
 if __name__ == '__main__':
     nw = NeuroWrapper()
     misc = {
-        'class_name': 'neurosim_adder',
+        'class_name': 'mux',
         'action_name': 'read',
-        'attributes': {'technology': 65, 'precision': 8, 'n_adder_tree_inputs': 1},
+        'attributes': {'technology': 32, 'n_bits': 7, 'n_adder_tree_inputs': 1, 'n_mux_inputs': 32},
     }
     cols = {
         'class_name': 'pim_col_drivers',
@@ -359,9 +378,15 @@ if __name__ == '__main__':
 
     a = []
     target = misc
-    for i in [32, 45, 65]:
+    for i in [32]:
         target['attributes']['technology'] = i
         a.append(nw.estimate_energy(target))
+        target['class_name'] = 'nand_gate'
+        a.append(nw.estimate_area(target))
+        target['class_name'] = 'not_gate'
+        a.append(nw.estimate_area(target))
+        target['class_name'] = 'nor_gate'
+        a.append(nw.estimate_area(target))
 
     #for adc_resolution in range(1, 12):
     #    cols['attributes']['adc_resolution'] = adc_resolution

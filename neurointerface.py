@@ -471,37 +471,50 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
                       crossbar.area_per_cell(),
                       crossbar.leakage_per_cell())
 
-def adder_tree_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
-    """ Returns dictionary of stats for adder energy, area, and leakage. """
-    # Adders are always activated.
+def misc_stats(crossbar: Crossbar, target: str) -> Dict[str, float]:
+    """ Returns dictionary of stats for misc component energy, area, and leakage. """
     return stats2dict(
-        crossbar.energy_on('adder tree', True, False),
-        0, crossbar.area('adder tree'),
-        crossbar.leakage('adder tree'))
+        crossbar.energy_on('target', True, False), 
+        0, 
+        crossbar.area(target), 
+        crossbar.leakage(target)
+    )
+
+def adder_tree_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
+    """ Returns dictionary of stats for adder tree energy, area, and leakage. """
+    return misc_stats(crossbar, 'adder tree')
 
 def adder_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for adder energy, area, and leakage. """
-    # Adders are always activated.
-    return stats2dict(
-        crossbar.energy_on('adder', True, False),
-        0, crossbar.area('adder'),
-        crossbar.leakage('adder'))
+    return misc_stats(crossbar, 'adder')
 
 def shift_add_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for shift add energy, area, and leakage. """
-    # Shift adders are always activated.
-    return stats2dict(
-        crossbar.energy_on('shift add', True, False),
-        0, crossbar.area('shift add'),
-        crossbar.leakage('shift add'))
+    return misc_stats(crossbar, 'shift add')
     
 def max_pool_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for max pool energy, area, and leakage. """
-    # Max pool is always activated.
-    return stats2dict(
-        crossbar.energy_on('maxpool', True, False),
-        0, crossbar.area('maxpool'),
-        crossbar.leakage('maxpool'))
+    return misc_stats(crossbar, 'maxpool')
+
+def mux_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
+    """ Returns dictionary of stats for mux energy, area, and leakage. """
+    return misc_stats(crossbar, 'peripheral mux')
+
+def flip_flop_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
+    """ Returns dictionary of stats for flip flop energy, area, and leakage. """
+    return misc_stats(crossbar, 'flip flop')
+
+def not_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
+    """ Returns dictionary of stats for not gate energy, area, and leakage. """
+    return misc_stats(crossbar, 'not gate')
+
+def nor_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
+    """ Returns dictionary of stats for nor gate energy, area, and leakage. """
+    return misc_stats(crossbar, 'nor gate')
+
+def nand_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
+    """ Returns dictionary of stats for nand gate energy, area, and leakage. """
+    return misc_stats(crossbar, 'nand gate')
 
 
 if __name__ == '__main__':
