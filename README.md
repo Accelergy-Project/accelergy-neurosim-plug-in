@@ -135,7 +135,11 @@ Actions:
 - max_pool
 
 ## NOT, NAND, and NOR gates
+<<<<<<< HEAD
 Logic gates
+=======
+A digital flip flop
+>>>>>>> origin/main
 
 Class:
 - not_gate

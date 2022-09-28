@@ -5,6 +5,7 @@
 -AccessCMOSWidth (F): 6.000000
 -ResistanceOn (ohm): 3000
 -ResistanceOff (ohm): 6000
+-AccessTransistorResistance (ohm): 20000
 -ReadMode: current
 -ReadVoltage (V): 0.250000
 -ReadPower (uW): 30.000000

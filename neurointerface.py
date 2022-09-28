@@ -61,6 +61,7 @@ NV_TO_NEURO = [
     # RRAM Configuration
     (('-ResistanceOn (ohm):', '-ResistanceOnAtReadVoltage (ohm):'), 'resistanceOn:'),
     (('-ResistanceOff (ohm):', '-ResistanceOffAtReadVoltage (ohm):'), 'resistanceOff:'),
+    ('-AccessTransistorResistance (ohm):', 'accessTransistorResistance:'),
     # If the read/write mode is current, set the voltage to the current * avg resistance
     ('AVG_RES', lambda: (PARSED['resistanceOn:'] + PARSED['resistanceOff:']) / 2),
     ('AVG_CONDUCTANCE', lambda: (1 / PARSED['resistanceOn:'] + 1 / PARSED['resistanceOff:']) / 2),
@@ -269,7 +270,7 @@ class Crossbar:
         self.adc_action_share = adc_action_share
         self.adc_area_share = adc_area_share
 
-        self.max_activation_time = 2 ** (self.temporal_dac_bits - 1)
+        self.max_activation_time = 2 ** self.temporal_dac_bits - 1
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
@@ -322,6 +323,11 @@ class Crossbar:
             print("ERROR: NeuroSIM returned no components. NeuroSIM output above.")
             raise ValueError('NeuroSIM returned no components. Check the generated Neurosim input' \
                              ' config and make sure all values are populated.')
+
+        columns_at_once = nvsimget('Columns read at once:', results, False)
+        min_latency = nvsimget('Minimum latency per read:', results, False)
+        print(f'Info: Crossbar minimum latency is {min_latency:.3f} ns to read '
+              f'{columns_at_once} columns at once.')
 
     def get_components(self, read: bool, hi: bool) -> List[Component]:
         """ Returns a list of components matching the criteria """
@@ -433,15 +439,14 @@ def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
     if crossbar.temporal_spiking:
         avg_input *= crossbar.max_activation_time
     # For voltage DAC, some inputs are activated with a lower voltage
-    avg_input /= 2 ** (crossbar.voltage_dac_bits - 1)
-    print(f'Scaling row energy by {avg_input}')
     stats = rowcol_stats(crossbar, avg_input, avg_cell, 'row')
     stats_dac = rowcol_stats(crossbar, avg_input, avg_cell, 'rowdac')
 
     # If there are multiple voltage DAC levels, add one row driver for each level.
     # The drivers can be attached to different voltage rails.
-    stats['Area'] = stats['Area'] + stats_dac['Area'] * (2 ** crossbar.voltage_dac_bits - 1)
-    stats['Leakage'] = stats['Leakage'] + stats_dac['Leakage'] * (2 ** crossbar.voltage_dac_bits - 1)
+    dac_scale = 2 ** (crossbar.voltage_dac_bits - 1) - 1
+    stats['Area'] = stats['Area'] + stats_dac['Area'] * dac_scale
+    stats['Leakage'] = stats['Leakage'] + stats_dac['Leakage'] * dac_scale
     return stats
 
 def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
@@ -510,7 +515,6 @@ def nor_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dic
 def nand_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for nand gate energy, area, and leakage. """
     return misc_stats(crossbar, 'nand gate')
-
 
 
 if __name__ == '__main__':

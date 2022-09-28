@@ -11,6 +11,7 @@
 
 -ResistanceOn (ohm): 1000
 -ResistanceOff (ohm): 1000000
+-AccessTransistorResistance (ohm): 20000
 
 -ReadMode: voltage
 -ReadCurrent (uA): 40

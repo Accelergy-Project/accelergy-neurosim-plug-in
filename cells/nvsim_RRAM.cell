@@ -10,6 +10,7 @@
 -ResistanceOnAtReadVoltage (ohm): 1000000
 -ResistanceOffAtReadVoltage (ohm): 10000000
 -ResistanceOnAtHalfResetVoltage (ohm): 500000
+-AccessTransistorResistance (ohm): 20000
 
 -CapacitanceOn (F): 1e-16
 -CapacitanceOff (F): 1e-16
