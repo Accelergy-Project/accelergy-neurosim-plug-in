@@ -28,55 +28,44 @@ pim_actions: &pim_actions
 classes:
   - name: pim_row_drivers
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: pim_col_drivers
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: pim_cell
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: shift_add
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: neurosim_adder
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: neurosim_adder_tree
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: max_pool
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: flip_flop
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: not_gate
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: nand_gate
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
 
   - name: nor_gate
     actions: *pim_actions
-    attributes:
-      none: here_so_list_is_not_empty
+    attributes: {}
