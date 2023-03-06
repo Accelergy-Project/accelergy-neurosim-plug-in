@@ -30,7 +30,7 @@ classes:
     actions: *pim_actions
     attributes: {}
 
-  - name: pim_col_drivers
+  - name: pim_adc
     actions: *pim_actions
     attributes: {}
 
