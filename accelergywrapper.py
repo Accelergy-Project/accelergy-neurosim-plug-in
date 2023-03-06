@@ -107,7 +107,7 @@ ALL_ACTIONS = READ_ACTIONS + WRITE_ACTIONS + IDLE_ACTIONS
 # Accelergy prmiitive components supported and their internal names
 SUPPORTED_CLASSES = {
     'pim_row_drivers' :     (neurointerface.row_stats, PIM_PARAMS),
-    'pim_col_drivers' :     (neurointerface.col_stats, PIM_PARAMS),
+    'pim_adc' :             (neurointerface.col_stats, PIM_PARAMS),
     'pim_cell' :            (neurointerface.cell_stats, PIM_PARAMS),
     'shift_add':            (neurointerface.shift_add_stats, SHIFT_ADD_PARAMS),
     'neurosim_adder':       (neurointerface.adder_stats, ADDER_PARAMS),
