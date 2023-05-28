@@ -6,7 +6,7 @@ We also allow conversions for NVMExplorer[2]/NVSim[3] style cell files to Neuros
 ## PIM Crossbar Model
 We encourage you read section 6 of the NeuroSim Manual in the DNN_NeuroSim_V1.3/Documents folder.
 
-PIM crossbar energy/area is dominated by four pieces.
+We model PIM crossbar energy/area with four pieces:
 
 - Row Activation: This is the path for inputs to activate a crossbar. An input voltage will actiavte a wordline, or row of memory cells. Multiple input voltages or longer-duration inputs can feed higher resolution inputs.
 - Column Activation: This is the path for outputs to be read out of a crossbar. Once input voltages have activated a wordline, they will feed current onto bitlines, or columns. Column activation is the energy required to get this current out and to precharge the wordline before reading.
