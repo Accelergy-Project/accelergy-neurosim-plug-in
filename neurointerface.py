@@ -474,7 +474,7 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
 def misc_stats(crossbar: Crossbar, target: str) -> Dict[str, float]:
     """ Returns dictionary of stats for misc component energy, area, and leakage. """
     return stats2dict(
-        crossbar.energy_on('target', True, False), 
+        crossbar.energy_on(target, True, False), 
         0, 
         crossbar.area(target), 
         crossbar.leakage(target)
