@@ -1,4 +1,10 @@
 """ Neurosim Accelergy Wrapper """
+from accelergy.plug_in_interface.estimator_wrapper import (
+    AccelergyPlugIn,
+    Estimation,
+    AccuracyEstimation,
+    AccelergyQuery
+)
 import math
 import sys
 import os
@@ -6,7 +12,9 @@ from typing import Dict
 # Need to add this directory to path for proper imports
 SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 sys.path.append(SCRIPT_DIR)
+# fmt: off
 import neurointerface
+# fmt: on
 
 # ==================================================================================================
 # Constants
@@ -25,12 +33,13 @@ CACHE = {}
 #   If a parameter is not used in an estimation (e.g. creating a shift+add), then the defaults will
 #   be used for the non-selected device (PIM_PARAMS defaults for rows & columns are used).
 PIM_PARAMS = {
-    'rows' :                    ('REQUIRED: Number of rows in a crossbar.', 32),
+    'rows':                    ('REQUIRED: Number of rows in a crossbar.', 32),
     'cols':                     ('REQUIRED: Number of columns in a crossbar.', 32),
     'cols_active_at_once':      ('REQUIRED: Number of columns active at once.', 8),
     'cell_config':              (f'REQUIRED: Path to a NVSim cell config file to use, or one of '
                                  f'the following samples: ' +
-                                 f', '.join(f'"{s}"' for s in SAMPLE_CELLS), 'placeholder',
+                                 f', '.join(
+                                     f'"{s}"' for s in SAMPLE_CELLS), 'placeholder',
                                  str),
     'average_input_value':      (f' REQUIRED: Average input value to a row. Must be between '
                                  f'0 and 1.', 1, float),
@@ -47,7 +56,7 @@ PIM_PARAMS = {
 
     'voltage_dac_bits':        (f'OPTIONAL: Resolution of a voltage DAC for inputs.', 1, int),
     'temporal_dac_bits':       (f'OPTIONAL: Resolution of a temporal DAC for inputs.', 1, int),
-    'temporal_spiking':        (f'OPTIONAL: Whether to use a spiking (#pulses) or a PWM (pulse  ' \
+    'temporal_spiking':        (f'OPTIONAL: Whether to use a spiking (#pulses) or a PWM (pulse  '
                                 f'length) approach for temporal DAC. Default is True ', True, bool),
     'adc_action_share':        (f'OPTIONAL: Manual scaling of ADC energy/op. Use this to simulate'
                                 f' an ADC more or less efficient than Neurosim\'s build-in ADC. ',
@@ -80,7 +89,7 @@ FLIP_FLOP_PARAMS = {
     'n_bits':                   (f'REQUIRED: # Bits of flip-flop.', 8),
 }
 PARAM_DICTS = [
-    PIM_PARAMS, ADDER_PARAMS, SHIFT_ADD_PARAMS, 
+    PIM_PARAMS, ADDER_PARAMS, SHIFT_ADD_PARAMS,
     MAX_POOL_PARAMS, ADDER_TREE_PARAMS, MUX_PARAMS, FLIP_FLOP_PARAMS
 ]
 for p in PARAM_DICTS:
@@ -88,30 +97,33 @@ for p in PARAM_DICTS:
                        f'and {min(PERMITTED_TECH_NODES)}nm.', 32)
 
 PERIPHERAL_PARAMS = {
-    **ADDER_PARAMS, **SHIFT_ADD_PARAMS, **MAX_POOL_PARAMS, 
+    **ADDER_PARAMS, **SHIFT_ADD_PARAMS, **MAX_POOL_PARAMS,
     **ADDER_TREE_PARAMS, **MUX_PARAMS, **FLIP_FLOP_PARAMS
 }
 ALL_PARAMS = {
-    **PIM_PARAMS, **ADDER_PARAMS, **SHIFT_ADD_PARAMS, **MAX_POOL_PARAMS, 
+    **PIM_PARAMS, **ADDER_PARAMS, **SHIFT_ADD_PARAMS, **MAX_POOL_PARAMS,
     **ADDER_TREE_PARAMS, **MUX_PARAMS, **FLIP_FLOP_PARAMS
 }
 
 # Actions from Accelergy and their translations
 READ_ACTIONS = [
     'read', 'mac', 'fire', 'drive', 'run', 'mac_random',
-    'mac_reused', 'compute', 'add', 'shift_add', 'max_pool', 'maxpool']
+    'mac_reused', 'compute', 'add', 'shift_add', 'max_pool', 'maxpool'
+    'convert', 'activate']
 WRITE_ACTIONS = ['write', 'set', 'erase']
-IDLE_ACTIONS = ['idle', 'gated_read', 'gated_write', 'skipped_read', 'skipped_write']
+IDLE_ACTIONS = ['idle', 'gated_read',
+                'gated_write', 'skipped_read', 'skipped_write']
 ALL_ACTIONS = READ_ACTIONS + WRITE_ACTIONS + IDLE_ACTIONS
 
 # Accelergy prmiitive components supported and their internal names
 SUPPORTED_CLASSES = {
-    'pim_row_drivers' :     (neurointerface.row_stats, PIM_PARAMS),
-    'pim_adc' :             (neurointerface.col_stats, PIM_PARAMS),
-    'pim_cell' :            (neurointerface.cell_stats, PIM_PARAMS),
+    'array_row_drivers':    (neurointerface.row_stats, PIM_PARAMS),
+    'array_col_drivers':    (neurointerface.col_stats, PIM_PARAMS),
+    'array_adc':            (neurointerface.col_stats, PIM_PARAMS),
+    'memory_cell':          (neurointerface.cell_stats, PIM_PARAMS),
     'shift_add':            (neurointerface.shift_add_stats, SHIFT_ADD_PARAMS),
-    'neurosim_adder':       (neurointerface.adder_stats, ADDER_PARAMS),
-    'neurosim_adder_tree':  (neurointerface.adder_tree_stats, ADDER_TREE_PARAMS),
+    'intadder':             (neurointerface.adder_stats, ADDER_PARAMS),
+    'intadder_tree':        (neurointerface.adder_tree_stats, ADDER_TREE_PARAMS),
     'max_pool':             (neurointerface.max_pool_stats, MAX_POOL_PARAMS),
     'mux':                  (neurointerface.mux_stats, MUX_PARAMS),
     'flip_flop':            (neurointerface.flip_flop_stats, FLIP_FLOP_PARAMS),
@@ -122,14 +134,18 @@ SUPPORTED_CLASSES = {
 
 PRINTED_INTERP_WARNING = False
 
+logger = None
 
 # ==================================================================================================
 # Input Parsing
 # ==================================================================================================
+
+
 def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
     """ Builds a crossbar from the given attributes """
     cell_config = attrs['cell_config']
-    peripheral_args = [(k, v) for k, v in attrs.items() if k in PERIPHERAL_PARAMS]
+    peripheral_args = [(k, v)
+                       for k, v in attrs.items() if k in PERIPHERAL_PARAMS]
     key = dict_to_str(attrs)
     attrs = {
         'sequential': attrs['sequential'],
@@ -148,15 +164,19 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
     }
     if key not in CACHE:
         CACHE[key] = neurointerface.Crossbar(**attrs)
-        CACHE[key].run_neurosim(cell_config, neurointerface.DEFAULT_CONFIG, peripheral_args)
+        CACHE[key].run_neurosim(
+            cell_config, neurointerface.DEFAULT_CONFIG, peripheral_args)
+    else:
+        logger.debug("Found cached output for %s. If you're looking for the "
+                     "log for this, see previous debug messages.", key)
     return CACHE[key]
 
 
-def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
+def get_neurosim_output(kind: str, attributes: dict) -> Dict[str, float]:
     """ Queries Neurosim for the stats for 'kind' component with 'attributes' attributes """
     assert kind in SUPPORTED_CLASSES, f'Unsupported primitive: {kind}'
-    if DEBUG:
-        print(f'Info: Querying Neurosim for {kind} with attributes: {attributes}')
+    logger.debug(
+        "Querying Neurosim for %s with attributes: %s", kind, attributes)
 
     # Load defaults
     to_pass = {k: v[1] for k, v in ALL_PARAMS.items()}
@@ -176,15 +196,17 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
         passtype = params[p][2] if len(params[p]) > 2 else int
         try:
             if isinstance(attributes[p], str) and passtype != str:
-                t = ''.join(c for c in attributes[p] if (c.isdigit() or c == '.'))
+                t = ''.join(c for c in attributes[p] if (
+                    c.isdigit() or c == '.'))
             else:
                 t = attributes[p]
             if t != attributes[p]:
-                print(f'WARN: Non-numeric {attributes[p]} for parameter {p}. Using {t} instead.')
+                print(
+                    f'WARN: Non-numeric {attributes[p]} for parameter {p}. Using {t} instead.')
             to_pass[p] = passtype(t)
-        except ValueError:
-            raise ValueError(f'Failed to generate {kind}. Parameter {p} must be of type ' \
-                             f'{passtype}. Given: "{attributes[p]}" Usage: \n{dict_to_str(docs)}')
+        except ValueError as e:
+            raise ValueError(f'Failed to generate {kind}. Parameter {p} must be of type '
+                             f'{passtype}. Given: "{attributes[p]}" Usage: \n{dict_to_str(docs)}') from e
 
     tn = PERMITTED_TECH_NODES
     assert to_pass['rows'] >= 8, \
@@ -212,9 +234,10 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
         f'Temporal DAC bits must be >=1. Given: {to_pass["temporal_dac_bits"]}'
 
     if not os.path.exists(to_pass['cell_config']):
-        cell_config = os.path.join(SCRIPT_DIR, 'cells', to_pass['cell_config'] + '.cell')
+        cell_config = os.path.join(
+            SCRIPT_DIR, 'cells', to_pass['cell_config'] + '.cell')
         assert os.path.exists(cell_config), f'Cell config {to_pass["cell_config"]}" not found. ' \
-                                         f'Try a sample config: "{", ".join(SAMPLE_CELLS)}'
+            f'Try a sample config: "{", ".join(SAMPLE_CELLS)}'
         to_pass['cell_config'] = cell_config
 
     # Interpolate the technology node. If p is in PERMITTED_TECH_NODES, then all this comes out
@@ -226,17 +249,38 @@ def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
     interp_pt = (t - lo) / (hi - lo) if hi - lo else 0
     hi_crossbar = build_crossbar({**to_pass, 'technology': hi})
     lo_crossbar = build_crossbar({**to_pass, 'technology': lo})
-    hi_est = callfunc(hi_crossbar, to_pass['average_input_value'], to_pass['average_cell_value'])
-    lo_est = callfunc(lo_crossbar, to_pass['average_input_value'], to_pass['average_cell_value'])
+    hi_est = callfunc(
+        hi_crossbar, to_pass['average_input_value'], to_pass['average_cell_value'])
+    lo_est = callfunc(
+        lo_crossbar, to_pass['average_input_value'], to_pass['average_cell_value'])
     if hi != lo:
-        print(f'Info: Interpolating between {lo}nm and {hi}nm. Interpolation point: {interp_pt}')
+        logger.debug("Interpolating between %snm and %snm. Interpolation "
+                     "point: %s", lo, hi, interp_pt)
 
     rval = {k: lo_est[k] + (hi_est[k] - lo_est[k]) * interp_pt for k in hi_est}
-    if DEBUG:
-        print(f'Info: NeuroSim returned: {rval}')
+    logger.debug("NeuroSim returned: %s", rval)
 
     return rval
 
+
+def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
+    for n in ['array_adc', 'array_col_drivers']:
+        assert n in SUPPORTED_CLASSES, \
+            'Please update this method body to support the new NeuroSim names.'
+
+    if kind == 'array_col_drivers':
+        attributes['adc_resolution'] = 0
+        return get_neurosim_output(kind, attributes)
+
+    if kind in ['array_adc', 'array_col_drivers']:
+        logger.info('First running WITH the ADC to get total energy')
+        with_adc = get_neurosim_output(kind, attributes)
+        attributes['adc_resolution'] = 0
+        logger.info('Now running WITHOUT the ADC to get column driver energy')
+        without_adc = get_neurosim_output(kind, attributes)
+        logger.info('Subtracting column driver energy to get ADC energy')
+        return {k: with_adc[k] - without_adc[k] for k in with_adc}
+    return get_neurosim_output(kind, attributes)
 
 
 def dict_to_str(attributes: Dict) -> str:
@@ -249,70 +293,61 @@ def dict_to_str(attributes: Dict) -> str:
 # ==============================================================================
 # Wrapper Class
 # ==============================================================================
-class NeuroWrapper:
+
+
+class NeuroWrapper(AccelergyPlugIn):
     """ NVSIM wrapper class """
+
     def __init__(self):
+        super().__init__()
+        global logger  # pylint: disable=global-statement
+        logger = self.logger
+        neurointerface.logger = self.logger
         self.estimator_name = 'Neurosim Estimator'
 
-    def primitive_action_supported(self, interface):
-        """
-        :param interface:
-        - contains four keys:
-        1. class_name : string
-        2. attributes: dictionary of name: value
-        3. action_name: string
-        4. arguments: dictionary of name: value
-        :type interface: dict
-        :return return the accuracy if supported, return 0 if not
-        :rtype: int
-        """
-        class_name = str(interface['class_name']).lower()
-        action_name = str(interface['action_name']).lower()
+    def primitive_action_supported(self, query: AccelergyQuery) -> AccuracyEstimation:
+        class_name = query.class_name.lower()
+        action_name = query.action_name.lower()
         if class_name in SUPPORTED_CLASSES:
             if action_name in ALL_ACTIONS:
-                return ACCURACY
-            print(f'ERROR: NeuroSim estimator supports {class_name} but not action {action_name}')
-            print(f'ERROR: Supported actions: {ALL_ACTIONS}')
-        return 0
+                return AccuracyEstimation(ACCURACY)
+            logger.error('ERROR: NeuroSim estimator supports %s but not '
+                         'action %s. Supported actions are: %s',
+                         class_name, action_name, ALL_ACTIONS)
+            return AccuracyEstimation(0)
+        logger.error(
+            'ERROR: NeuroSim estimator does not support %s. Supported '
+            'primitives are: %s', class_name, list(SUPPORTED_CLASSES.keys()))
+        return AccuracyEstimation(0)
 
-
-    def estimate_energy(self, interface):
-        """
-        :param interface:
-        - contains four keys:
-        1. class_name : string
-        2. attributes: dictionary of name: value
-        3. action_name: string
-        4. arguments: dictionary of name: value
-        :type interface: dict
-        :return return the accuracy if supported, return 0 if not
-        :rtype: int
-        """
-        class_name = str(interface['class_name']).lower()
-        attributes = interface['attributes']
-        action_name = str(interface['action_name']).lower()
+    def estimate_energy(self, query: AccelergyQuery) -> Estimation:
+        class_name = query.class_name.lower()
+        action_name = query.action_name.lower()
+        attributes = query.class_attrs
+        action_name = query.action_name.lower()
         stats = query_neurosim(class_name, attributes)
-        assert action_name in ALL_ACTIONS, f'{action_name} not supported. Must be in: {ALL_ACTIONS}'
+        assert action_name in ALL_ACTIONS, \
+            f'{action_name} not supported. Must be in: {ALL_ACTIONS}'
 
         if action_name in READ_ACTIONS:
-            return stats['Read Energy']
-        if action_name in WRITE_ACTIONS:
-            return stats['Write Energy']
-        return stats['Leakage']
+            v = stats['Read Energy']
+        elif action_name in WRITE_ACTIONS:
+            v = stats['Write Energy']
+        else:
+            v = stats['Leakage']
+        return Estimation(v, 'p')
 
-    def primitive_area_supported(self, interface):
-        """
-        :param interface:
-        - contains two keys:
-        1. class_name : string
-        2. attributes: dictionary of name: value
-        :type interface: dict
-        :return return the accuracy if supported, return 0 if not
-        :rtype: int
-        """
-        return ACCURACY if interface['class_name'].lower() in SUPPORTED_CLASSES else 0
+    def primitive_area_supported(self, query: AccelergyQuery) -> AccuracyEstimation:
+        class_name = query.class_name.lower()
+        if class_name.lower() in SUPPORTED_CLASSES:
+            return AccuracyEstimation(ACCURACY)
+        logger.error(
+            'ERROR: NeuroSim estimator does not support %s. Supported '
+            'primitives are: %s', class_name, list(SUPPORTED_CLASSES.keys()))
+        acc = ACCURACY if class_name.lower() in SUPPORTED_CLASSES else 0
+        return AccuracyEstimation(acc)
 
-    def estimate_area(self, interface):
+    def estimate_area(self, query: AccelergyQuery) -> Estimation:
         """
         :param interface:
         - contains two keys:
@@ -322,34 +357,14 @@ class NeuroWrapper:
         :return the estimated area
         :rtype: float
         """
-        class_name = interface['class_name'].lower()
-        attributes = interface['attributes']
+        a = query_neurosim(query.class_name.lower(), query.class_attrs)['Area']
+        return Estimation(a, 'u^2')
 
-        return query_neurosim(class_name, attributes)['Area']
-
-
-# TEST CODE
-
-
-PIM_PARAMS = {
-    'technology':               ('REQUIRED: Technology node. Must be between 7 and 130nm.', 32),
-    'rows' :                    ('REQUIRED: Number of rows in a crossbar.', 32),
-    'cols':                     ('REQUIRED: Number of columns in a crossbar.', 32),
-    'cols_active_at_once':      ('REQUIRED: Number of columns active at once.', 8),
-    'cell_config':              (f'REQUIRED: Path to a NVSim cell config file to use, or one of '
-                                 f'the following samples: ' +
-                                 f', '.join(f'"{s}"' for s in SAMPLE_CELLS), 'placeholder',
-                                 str),
-    'average_input_value':      (f' REQUIRED: Average input value to a row. Must be between '
-                                 f'0 and 1.', 1, float),
-    'average_cell_value':       (f' REQUIRED: Average cell value. Must be between 0 and 1.', 1,
-                                 float),
-    'sequential':               (f'OPTIONAL: Sequential mode. Default is False. If True, the '
-                                 f'crossbar will be set up to activate one row at a time. '
-                                 f'Can be used as a memory this way.', False),
-    'adc_resolution':           (f'OPTIONAL: ADC resolution. Set this if to use Neurosim\'s '
-                                 f'build-in ADC. Default is False.', 0)
-}
+    def get_name(self) -> str:
+        """
+        Returns the name of the plug-in.
+        """
+        return "Neurosim Plug-In"
 
 
 if __name__ == '__main__':
@@ -360,7 +375,7 @@ if __name__ == '__main__':
         'attributes': {'technology': 32, 'n_bits': 7, 'n_adder_tree_inputs': 1, 'n_mux_inputs': 32},
     }
     cols = {
-        'class_name': 'pim_col_drivers',
+        'class_name': 'array_col_drivers',
         'action_name': 'read',
         'attributes': {
             'technology': 32,
@@ -386,15 +401,5 @@ if __name__ == '__main__':
         a.append(nw.estimate_area(target))
         target['class_name'] = 'nor_gate'
         a.append(nw.estimate_area(target))
-
-    #for adc_resolution in range(1, 12):
-    #    cols['attributes']['adc_resolution'] = adc_resolution
-    #    a.append(nw.estimate_energy(cols))
-    #import copy
-    #for i in range(1, 128):
-    #    misc['attributes']['n_adder_tree_inputs'] = i
-    #    misc2 = copy.deepcopy(misc)
-    #    misc2['action_name'] = 'idle'
-    #    a.append(nw.estimate_energy(misc2))
 
     print('\n'.join(str(x) for x in a))

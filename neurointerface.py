@@ -14,7 +14,7 @@ DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, 'default_config.cfg')
 NEUROSIM_PATH = os.path.join(SCRIPT_DIR, 'NeuroSim/main')
 CFG_WRITE_PATH = os.path.join(SCRIPT_DIR, './neurosim_input.cfg')
 
-DEBUG = False
+logger = None
 
 # ==================================================================================================
 # NVSIM/NVMEXPLORER -> NEUROSIM TRANSLATIONS
@@ -24,11 +24,13 @@ PARSED = {}
 
 # These should all be found in the NVSim config file
 NV_TO_NEURO_TERNARIES = {
-    '-MemCellType: SRAM': ('memcelltype:', 1, 2), # SRAM if -MemCellType: SRAM is present, else RRAM
+    # SRAM if -MemCellType: SRAM is present, else RRAM
+    '-MemCellType: SRAM': ('memcelltype:', 1, 2),
     '-AccessType: CMOS': ('accesstype:', 1, 4),
     '-ReadMode: current': ('currentMode:', 1, 0),
-    '-SetMode: current': ('currentModeSET:', 1, 0), # Not used in NeuroSim but here so we can
-                                                    # calculate the SET voltage
+    # Not used in NeuroSim but here so we can
+    '-SetMode: current': ('currentModeSET:', 1, 0),
+    # calculate the SET voltage
 }
 
 # These are parsed in order, so make sure all lambdas have required data first.
@@ -40,11 +42,14 @@ NV_TO_NEURO_TERNARIES = {
 NV_TO_NEURO = [
     ##
     # Device agnostic
-    ('-CellArea (F^2):', 'CELL_AREA'), # Get these into the value cache
+    ('-CellArea (F^2):', 'CELL_AREA'),  # Get these into the value cache
     ('-CellAspectRatio:', 'CELL_ASPECT_RATIO'),
-    ('heightInFeatureSize1T1R:', lambda: (PARSED['CELL_AREA'] * PARSED['CELL_ASPECT_RATIO']) ** .5),
-    ('widthInFeatureSize1T1R:', lambda: (PARSED['CELL_AREA'] / PARSED['CELL_ASPECT_RATIO']) ** .5),
-    ('heightInFeatureSizeCrossbar:', lambda: PARSED['heightInFeatureSize1T1R:']),
+    ('heightInFeatureSize1T1R:', lambda: (
+        PARSED['CELL_AREA'] * PARSED['CELL_ASPECT_RATIO']) ** .5),
+    ('widthInFeatureSize1T1R:', lambda: (
+        PARSED['CELL_AREA'] / PARSED['CELL_ASPECT_RATIO']) ** .5),
+    ('heightInFeatureSizeCrossbar:',
+     lambda: PARSED['heightInFeatureSize1T1R:']),
     ('widthInFeatureSizeCrossbar:', lambda: PARSED['widthInFeatureSize1T1R:']),
     ('heightInFeatureSizeSRAM:', lambda: PARSED['heightInFeatureSize1T1R:']),
     ('widthInFeatureSizeSRAM:', lambda: PARSED['widthInFeatureSize1T1R:']),
@@ -63,8 +68,10 @@ NV_TO_NEURO = [
     (('-ResistanceOff (ohm):', '-ResistanceOffAtReadVoltage (ohm):'), 'resistanceOff:'),
     ('-AccessTransistorResistance (ohm):', 'accessTransistorResistance:'),
     # If the read/write mode is current, set the voltage to the current * avg resistance
-    ('AVG_RES', lambda: (PARSED['resistanceOn:'] + PARSED['resistanceOff:']) / 2),
-    ('AVG_CONDUCTANCE', lambda: (1 / PARSED['resistanceOn:'] + 1 / PARSED['resistanceOff:']) / 2),
+    ('AVG_RES', lambda: (
+        PARSED['resistanceOn:'] + PARSED['resistanceOff:']) / 2),
+    ('AVG_CONDUCTANCE', lambda: (
+        1 / PARSED['resistanceOn:'] + 1 / PARSED['resistanceOff:']) / 2),
 
     ('-SetVoltage (V):', 'writeVoltage:'),
     ('-SetPulse (ns):', ('writePulseWidth:', 1e-9)),
@@ -72,9 +79,9 @@ NV_TO_NEURO = [
     ('-SetCurrent (uA):', ('SET_CURRENT', 1e-6)),
     ('-SetPower (uW):', ('SET_POWER', 1e-6)),
     ('writeVoltage:', lambda: PARSED.get('writeVoltage:', PARSED['SET_POWER'] \
-        / PARSED['AVG_CONDUCTANCE'] ** 2)),
+                                         / PARSED['AVG_CONDUCTANCE'] ** 2)),
     ('writeVoltage:', lambda: PARSED.get('writeVoltage:', PARSED['SET_CURRENT'] \
-        / PARSED['AVG_CONDUCTANCE'])),
+                                         / PARSED['AVG_CONDUCTANCE'])),
     ('writePulseWidth:', lambda: PARSED['SET_ENERGY'] \
         / (PARSED['writeVoltage:'] ** 2 * PARSED['AVG_CONDUCTANCE'])),
 
@@ -84,15 +91,16 @@ NV_TO_NEURO = [
     ('-ReadEnergy (pJ):', ('READ_ENERGY', 1e-12)),
     ('-ReadPower (uW):', ('READ_POWER', 1e-6)),
     ('readVoltage:', lambda: PARSED.get('readVoltage:', PARSED['READ_POWER'] \
-        / PARSED['AVG_CONDUCTANCE'] ** 2)),
+                                        / PARSED['AVG_CONDUCTANCE'] ** 2)),
     ('readVoltage:', lambda: PARSED.get('readVoltage:', PARSED['READ_CURRENT'] \
-        / PARSED['AVG_CONDUCTANCE'])),
-    #('readPulseWidth:', lambda: PARSED['READ_ENERGY'] \
+                                        / PARSED['AVG_CONDUCTANCE'])),
+    # ('readPulseWidth:', lambda: PARSED['READ_ENERGY'] \
     #    / (PARSED['readVoltage:'] ** 2 * PARSED['AVG_CONDUCTANCE'])),
     #('readPulseWidth:', lambda: PARSED.get('readPulseWidth:', 1e-8)),
 
     # Activate transistor if CMOS, else raise to read voltage
-    ('accessVoltage:', lambda: 0.7 if PARSED['accesstype:'] == 1 else PARSED['readVoltage:']),
+    ('accessVoltage:',
+     lambda: 0.7 if PARSED['accesstype:'] == 1 else PARSED['readVoltage:']),
 ]
 
 
@@ -133,18 +141,18 @@ def nvsimget(getting: str, text: str, check_if_present: bool) -> float or bool:
     if check_if_present:
         return found is not None
 
-    found = re.search(rf'^{getting}\s*([a-zA-Z0-9\.\-]+)', text, flags=re.MULTILINE)
+    found = re.search(
+        rf'^{getting}\s*([a-zA-Z0-9\.\-]+)', text, flags=re.MULTILINE)
     try:
         return float(found.group(1))
     except:
-        raise Exception(f'Could not find valid float setting for {getting} in cell file.')
+        raise Exception(
+            f'Could not find valid float setting for {getting} in cell file.')
 
 
 def cfgset(setting: str, text: str, value: float):
     """ Sets 'setting' in the config file to 'value' """
     setting = re.escape(setting)
-    #print(setting)
-    #print(re.search(rf'^({setting}\s*)([a-zA-Z0-9\.\-]+)', text, flags=re.MULTILINE))
     text = re.sub(rf'^({setting}\s*)([a-zA-Z0-9\.\-]+)', rf'\g<1>{str(value)}',
                   text, flags=re.MULTILINE)
     return text
@@ -163,7 +171,7 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
     for k, v in NV_TO_NEURO_TERNARIES.items():
         PARSED[v[0]] = v[1] if nvsimget(k, celltext, True) else v[2]
 
-    print('Info: Neurosim Plugin parsing cell file...')
+    logger.info('Neurosim Plugin parsing cell file...')
 
     # Parse expressions
     for n in NV_TO_NEURO:
@@ -180,8 +188,7 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
                 neuroname = k
                 try:
                     PARSED[neuroname] = v()
-                    if DEBUG:
-                        print(f'\t{neuroname}={PARSED[neuroname]}')
+                    logger.debug('\t%s=%s', neuroname, PARSED[neuroname])
                     break
                 except KeyError as e:
                     errors.append(f'Could not find value of {e}.')
@@ -190,22 +197,21 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
             # If it's not callable, try to grab it from the cell file
             elif nvsimget(k, celltext, True):
                 PARSED[neuroname] = nvsimget(k, celltext, False) * scale
-                if DEBUG:
-                    print(f'\t{neuroname}={PARSED[neuroname]}')
+                logger.debug('\t%s=%s', neuroname, PARSED[neuroname])
                 break
             else:
                 errors.append(f'Could not find {k} in cell file.')
         # If we failed, record errors
         else:
-            if DEBUG:
-                failstr = f'\tFailed to calculate "{neuroname}". Ignore if this value is not needed.'
-                fails[neuroname] = fails.get(neuroname, [failstr]) + [f'\t\t{e}' for e in errors]
+            failstr = f'\tFailed to calculate "{neuroname}". Ignore if this value is not needed.'
+            fails[neuroname] = fails.get(
+                neuroname, [failstr]) + [f'\t\t{e}' for e in errors]
 
     for k, v in fails.items():
-        if k in PARSED: # It succeeded somewhere else!
+        if k in PARSED:  # It succeeded somewhere else!
             continue
         for f in v:
-            print(f)
+            logger.info(f)
     for k, v in PARSED.items():
         cfgtext = cfgset(k, cfgtext, v)
 
@@ -215,13 +221,15 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
 # NEUROSIM OUTPUT PARSING. THESE FUNCTIONS ARE USED AFTER NEUROSIM IS CALLED.
 # ==================================================================================================
 
+
 class Component():
     """ Class to store a single Neurosim component"""
+
     def __init__(self, line: str):
         line = [s.strip().lower() for s in line.split(',')]
         self.read = 'read' in line.pop(0)
         self.name = line.pop(0)
-        x = lambda: float(line.pop(0))
+        def x(): return float(line.pop(0))
         self.activation_energy, self.energy_per_row, self.energy_per_col = x(), x(), x()
         self.energy_per_cell, self.area, self.leakage = x(), x(), x()
 
@@ -230,15 +238,17 @@ def replace_cfg(find: str, replace: str or Number, text: str, cfgfile: str):
     """ Replaces 'find' in text with 'replace'. Errors on not found. """
     find = f'SETME_{find.upper()}'
     if find not in text:
-        print('OFFENDING CONFIG FILE BELOW.')
-        print('|\t' + text.replace('\n', '\n| '))
-        print('OFFENDING CONFIG FILE ABOVE.')
-        raise ValueError(f'{find} not found in {cfgfile}. Is the default config file altered?')
+        logger.error('OFFENDING CONFIG FILE BELOW.')
+        logger.error('|\t' + text.replace('\n', '\n| '))
+        logger.error('OFFENDING CONFIG FILE ABOVE.')
+        raise ValueError(
+            f'{find} not found in {cfgfile}. Is the default config file altered?')
     return text.replace(find, str(replace))
 
 
 class Crossbar:
     """ Holds one crossbar and related peripherals. """
+
     def __init__(self,
                  sequential: bool,
                  rows: int,
@@ -266,7 +276,7 @@ class Crossbar:
         self.latency = latency
         self.voltage_dac_bits = voltage_dac_bits
         self.temporal_dac_bits = temporal_dac_bits
-        self.temporal_spiking = temporal_spiking        
+        self.temporal_spiking = temporal_spiking
         self.adc_action_share = adc_action_share
         self.adc_area_share = adc_area_share
 
@@ -274,7 +284,7 @@ class Crossbar:
 
     def run_neurosim(self, cellfile: str, cfgfile: str, other_args: List[Tuple[str, Number]] = ()):
         """ Runs Neurosim with the given parameters. Populates component data from the output. """
-        print(f'Info: Building a crossbar with cell file {cellfile}')
+        logger.info('Building a crossbar with cell file %s', cellfile)
 
         # Build config
         cfg = buildcfg(cellfile, cfgfile)
@@ -283,12 +293,10 @@ class Crossbar:
         my_set = ['sequential', 'cols_muxed', 'rows', 'cols',
                   'technology', 'num_output_levels', 'read_pulse_width']
         for to_set in my_set:
-            if DEBUG:
-                print(f'\tSetting {to_set} to {getattr(self, to_set)}')
+            logger.debug('Setting %s to %s', to_set, getattr(self, to_set))
             cfg = replace_cfg(to_set, getattr(self, to_set), cfg, cfgfile)
         for to_set in [a for a in other_args if a[0] not in my_set]:
-            if DEBUG:
-                print(f'\tSetting {to_set[0]} to {to_set[1]}')
+            logger.debug('Setting %s to %s', to_set[0], to_set[1])
             cfg = replace_cfg(to_set[0], to_set[1], cfg, cfgfile)
 
         # Write config
@@ -297,17 +305,18 @@ class Crossbar:
             f.write(cfg)
 
         # Run
-        print(f'Info: Running: {NEUROSIM_PATH} {inputpath}')
-        proc = subprocess.Popen([NEUROSIM_PATH, inputpath], stdout=subprocess.PIPE)
+        logger.info('Running %s %s', NEUROSIM_PATH, inputpath)
+        proc = subprocess.Popen(
+            [NEUROSIM_PATH, inputpath], stdout=subprocess.PIPE)
         proc.wait()
         results, err = proc.communicate()
         if err:
-            print(f'WARNING: NeuroSIM returned error code {proc.returncode}')
-            print(err.decode('utf-8'))
+            logger.error('NeuroSIM returned error code %s', proc.returncode)
+            logger.error(err.decode('utf-8'))
         results = results.decode('utf-8')
-        if DEBUG:
-            print(results)
-        self.comps = [Component(line) for line in results.split('\n') if '<COMPONENT>' in line]
+        logger.debug('NeuroSIM output:\n' + results)
+        self.comps = [Component(line) for line in results.split(
+            '\n') if '<COMPONENT>' in line]
         for c in self.comps:
             if 'adc' in c.name:
                 c.area *= self.adc_area_share
@@ -316,18 +325,23 @@ class Crossbar:
                         setattr(c, a, getattr(c, a) * self.adc_action_share)
 
         if not self.comps:
-            print("\n\nERROR: NeuroSIM returned no components. NeuroSIM output below.")
-            print('| ' + results.replace('\n', '\n| ') + '  ')
+            logger.error(
+                'NeuroSIM returned no components. NeuroSIM output below.')
+            logger.error(
+                "\n\nNeuroSIM returned no components. NeuroSIM output below.")
+            logger.error('| ' + results.replace('\n', '\n| ') + '  ')
             if err:
-                print('| ' + err.decode('utf-8').replace('\n', '\n| ') + '  ')
-            print("ERROR: NeuroSIM returned no components. NeuroSIM output above.")
-            raise ValueError('NeuroSIM returned no components. Check the generated Neurosim input' \
+                logger.error(
+                    '| ' + err.decode('utf-8').replace('\n', '\n| ') + '  ')
+            logger.error(
+                "NeuroSIM returned no components. NeuroSIM output above.")
+            raise ValueError('NeuroSIM returned no components. Check the generated Neurosim input'
                              ' config and make sure all values are populated.')
 
         columns_at_once = nvsimget('Columns read at once:', results, False)
         min_latency = nvsimget('Minimum latency per read:', results, False)
-        print(f'Info: Crossbar minimum latency is {min_latency:.3f} ns to read '
-              f'{columns_at_once} columns at once.')
+        logger.info('Crossbar minimum latency is %s ns to read %s columns at once.',
+                    min_latency, columns_at_once)
 
     def get_components(self, read: bool, hi: bool) -> List[Component]:
         """ Returns a list of components matching the criteria """
@@ -350,8 +364,9 @@ class Crossbar:
     def energy_on(self, kind: str, read: bool, hi: bool) -> float:
         """ Returns the energy of running all peripherals and sending a logic '1'. """
         # Grab all components and filter by matching action
-        comps = self.get_components(read, hi) 
-        on_energy = sum(getattr(c, f'energy_per_{kind.lower()}', 0) for c in comps)
+        comps = self.get_components(read, hi)
+        on_energy = sum(
+            getattr(c, f'energy_per_{kind.lower()}', 0) for c in comps)
         # Also add in base activation energy of matching components
         return on_energy + self.energy_off(kind, read, hi)
 
@@ -359,11 +374,7 @@ class Crossbar:
         """
         Returns the energy of reading/writing a memory cell depending on HI or LO conductance.
         """
-        #print(f'Getting cell energy. Has ADC: {self.has_adc}')
         comps = self.get_components(read, hi)
-        #print(f'Found {len(comps)} components. {", ".join(c.name for c in comps)}')
-        #for c in comps:
-        #    print(f'\t{c.name}: {c.energy_per_row} + {c.energy_per_cell}')
         return sum(c.energy_per_cell for c in comps)
 
     def area_per_cell(self) -> float:
@@ -399,8 +410,9 @@ class Crossbar:
         comps = self.get_components(True, True)
         return sum(c.leakage for c in comps if target.lower() in c.name)
 
+
 def stats2dict(read_energy: float, write_energy: float, area: float, leakage: float) \
-    -> Dict[str, float]:
+        -> Dict[str, float]:
     """ Returns a dictionary of stats. """
     return {
         'Read Energy': read_energy,
@@ -409,8 +421,9 @@ def stats2dict(read_energy: float, write_energy: float, area: float, leakage: fl
         'Leakage': leakage
     }
 
+
 def rowcol_stats(crossbar: Crossbar, avg_input: float, avg_cell: float, kind: str) \
-    -> Dict[str, float]:
+        -> Dict[str, float]:
     """ Calculates the stats for row or column activations. """
     read_on_cello = crossbar.energy_on(kind, True, False)
     read_on_cellhi = crossbar.energy_on(kind, True, True)
@@ -426,11 +439,10 @@ def rowcol_stats(crossbar: Crossbar, avg_input: float, avg_cell: float, kind: st
     area = crossbar.area(kind)
     leakage = crossbar.leakage(kind)
     read = read_off + (read_on - read_off) * avg_input
-    # print(f'Read on: {read_on}. Read off: {read_off}. Read: {read}')
-
-    write = write_on # Can't gate writes becasuse we still have to reset cells
-    rw_leakage = 0#leakage / (1 if kind != 'col' else crossbar.cols_muxed) * crossbar.latency
+    write = write_on  # Can't gate writes becasuse we still have to reset cells
+    rw_leakage = 0
     return stats2dict(read + rw_leakage, write + rw_leakage, area, leakage)
+
 
 def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for row energy, area, and leakage. """
@@ -449,17 +461,22 @@ def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str
     stats['Leakage'] = stats['Leakage'] + stats_dac['Leakage'] * dac_scale
     return stats
 
+
 def col_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for column energy, area, and leakage. """
     # Don't use average input. Columns are always activated regardless of row input value.
     return rowcol_stats(crossbar, 1, avg_cell, 'col')
 
+
 def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
-    cell_on = crossbar.energy_cell(True, True) # Cell energy from driving current through cell
+    # Cell energy from driving current through cell
+    cell_on = crossbar.energy_cell(True, True)
     cell_off = crossbar.energy_cell(True, False)
 
-    read_memcell_energy = (cell_off + (cell_on - cell_off) * avg_cell) * avg_input
-    cell_on = crossbar.energy_cell(False, True) # Cell energy from driving current through cell
+    read_memcell_energy = (
+        cell_off + (cell_on - cell_off) * avg_cell) * avg_input
+    # Cell energy from driving current through cell
+    cell_on = crossbar.energy_cell(False, True)
     cell_off = crossbar.energy_cell(False, False)
     write_memcell_energy = cell_on + (cell_off - cell_on) * avg_cell
 
@@ -471,46 +488,56 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
                       crossbar.area_per_cell(),
                       crossbar.leakage_per_cell())
 
+
 def misc_stats(crossbar: Crossbar, target: str) -> Dict[str, float]:
     """ Returns dictionary of stats for misc component energy, area, and leakage. """
     return stats2dict(
-        crossbar.energy_on(target, True, False), 
-        0, 
-        crossbar.area(target), 
+        crossbar.energy_on(target, True, False),
+        0,
+        crossbar.area(target),
         crossbar.leakage(target)
     )
+
 
 def adder_tree_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for adder tree energy, area, and leakage. """
     return misc_stats(crossbar, 'adder tree')
 
+
 def adder_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for adder energy, area, and leakage. """
     return misc_stats(crossbar, 'adder')
 
+
 def shift_add_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for shift add energy, area, and leakage. """
     return misc_stats(crossbar, 'shift add')
-    
+
+
 def max_pool_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for max pool energy, area, and leakage. """
     return misc_stats(crossbar, 'maxpool')
+
 
 def mux_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for mux energy, area, and leakage. """
     return misc_stats(crossbar, 'peripheral mux')
 
+
 def flip_flop_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for flip flop energy, area, and leakage. """
     return misc_stats(crossbar, 'flip flop')
+
 
 def not_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for not gate energy, area, and leakage. """
     return misc_stats(crossbar, 'not gate')
 
+
 def nor_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for nor gate energy, area, and leakage. """
     return misc_stats(crossbar, 'nor gate')
+
 
 def nand_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for nand gate energy, area, and leakage. """
@@ -524,7 +551,8 @@ if __name__ == '__main__':
     COLS_MUXED = 8
     TECHNODE = 32
     adc_resolution = 12
-    CROSSBAR = Crossbar(SEQUENTIAL, ROWS, COLS, COLS_MUXED, TECHNODE, adc_resolution)
+    CROSSBAR = Crossbar(SEQUENTIAL, ROWS, COLS, COLS_MUXED,
+                        TECHNODE, adc_resolution)
 
     CELLFILE = 'cells/isaac.cell'
 
@@ -550,7 +578,8 @@ if __name__ == '__main__':
         col_off.append(CROSSBAR.energy_off('col', True, True) * CROSSBAR.cols)
         area.append(CROSSBAR.area('row') + CROSSBAR.area('col'))
         leakage.append(CROSSBAR.leakage_peripheral())
-        cell.append(CROSSBAR.energy_cell(True, True) * 0.1 * CROSSBAR.rows * CROSSBAR.cols)
+        cell.append(CROSSBAR.energy_cell(True, True) *
+                    0.1 * CROSSBAR.rows * CROSSBAR.cols)
 
     print('Row_ON: ' + f' '.join(str(s) for s in row_on))
     print('Row_OFF: ' + f' '.join(str(s) for s in row_off))

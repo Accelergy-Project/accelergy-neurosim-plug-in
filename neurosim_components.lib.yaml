@@ -3,7 +3,7 @@ version: 0.0
 # I just put everything I could think of here
 # The intention is to be as robust as possible to different users'
 # vocabularies.
-pim_actions: &pim_actions
+array_actions: &array_actions
   - name: read
   - name: mac
   - name: fire
@@ -26,46 +26,50 @@ pim_actions: &pim_actions
   - name: maxpool
 
 classes:
-  - name: pim_row_drivers
-    actions: *pim_actions
+  - name: array_row_drivers
+    actions: *array_actions
     attributes: {}
 
-  - name: pim_adc
-    actions: *pim_actions
+  - name: array_col_drivers
+    actions: *array_actions
     attributes: {}
 
-  - name: pim_cell
-    actions: *pim_actions
+  - name: array_adc
+    actions: *array_actions
+    attributes: {}
+
+  - name: memory_cell
+    actions: *array_actions
     attributes: {}
 
   - name: shift_add
-    actions: *pim_actions
+    actions: *array_actions
     attributes: {}
 
-  - name: neurosim_adder
-    actions: *pim_actions
+  - name: intadder
+    actions: *array_actions
     attributes: {}
 
-  - name: neurosim_adder_tree
-    actions: *pim_actions
+  - name: intadder_tree
+    actions: *array_actions
     attributes: {}
 
   - name: max_pool
-    actions: *pim_actions
+    actions: *array_actions
     attributes: {}
 
   - name: flip_flop
-    actions: *pim_actions
+    actions: *array_actions
     attributes: {}
 
   - name: not_gate
-    actions: *pim_actions
+    actions: *array_actions
     attributes: {}
 
   - name: nand_gate
-    actions: *pim_actions
+    actions: *array_actions
     attributes: {}
 
   - name: nor_gate
-    actions: *pim_actions
+    actions: *array_actions
     attributes: {}
