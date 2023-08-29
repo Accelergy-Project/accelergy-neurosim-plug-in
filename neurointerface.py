@@ -303,6 +303,7 @@ class Crossbar:
         inputpath = os.path.realpath(CFG_WRITE_PATH)
         with open(inputpath, 'w') as f:
             f.write(cfg)
+        os.chmod(inputpath, 0o777)
 
         # Run
         logger.info('Running %s %s', NEUROSIM_PATH, inputpath)
