@@ -57,6 +57,8 @@ using namespace std;
 
 extern Param *param;
 
+#define WRITE_ENERGY_ENABLE 1
+
 SubArray::SubArray(InputParameter& _inputParameter, Technology& _tech, MemCell& _cell):
 						inputParameter(_inputParameter), tech(_tech), cell(_cell),
 						wllevelshifter(_inputParameter, _tech, _cell),
@@ -345,6 +347,10 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 			}
 		}
 	} 
+	
+	capRow1 += _numCol * param->cellCapacitanceAdjust;
+	capRow2 += _numCol * param->cellCapacitanceAdjust;
+	
 	initialized = true;  //finish initialization
 }
 
@@ -1059,10 +1065,10 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergyOther = wlDecoder.readDynamicEnergy;
 
 				// Write
-				// writeDynamicEnergy += wlDecoder.writeDynamicEnergy;
-				// writeDynamicEnergy += precharger.writeDynamicEnergy;
-				// writeDynamicEnergy += sramWriteDriver.writeDynamicEnergy;
-				// writeDynamicEnergy += writeDynamicEnergyArray;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlDecoder.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += precharger.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += sramWriteDriver.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += writeDynamicEnergyArray;
 				
 				// Leakage
 				leakage += wlDecoder.leakage;
@@ -1121,10 +1127,10 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergyOther = wlSwitchMatrix.readDynamicEnergy + ( ((numColMuxed > 1)==true? (mux.readDynamicEnergy + muxDecoder.readDynamicEnergy):0) )/numReadPulse;
 				
 				// Write
-				// writeDynamicEnergy += wlSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += precharger.writeDynamicEnergy;
-				// writeDynamicEnergy += sramWriteDriver.writeDynamicEnergy;
-				// writeDynamicEnergy += writeDynamicEnergyArray;				
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += precharger.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += sramWriteDriver.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += writeDynamicEnergyArray;				
 				
 				// Leakage
 				leakage += wlSwitchMatrix.leakage;
@@ -1155,10 +1161,10 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergy += senseAmp.readDynamicEnergy;
 				
 				// Write				
-				// writeDynamicEnergy += wlDecoder.writeDynamicEnergy;
-				// writeDynamicEnergy += precharger.writeDynamicEnergy;
-				// writeDynamicEnergy += sramWriteDriver.writeDynamicEnergy;
-				// writeDynamicEnergy += writeDynamicEnergyArray;				
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlDecoder.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += precharger.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += sramWriteDriver.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += writeDynamicEnergyArray;				
 				
 				// Leakage
 				leakage += wlDecoder.leakage;
@@ -1191,10 +1197,10 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergy += sarADC.readDynamicEnergy;
 				
 				// Write				
-				// writeDynamicEnergy += wlSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += precharger.writeDynamicEnergy;
-				// writeDynamicEnergy += sramWriteDriver.writeDynamicEnergy;
-				// writeDynamicEnergy += writeDynamicEnergyArray;				
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += precharger.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += sramWriteDriver.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += writeDynamicEnergyArray;				
 				
 				// Leakage
 				leakage += wlSwitchMatrix.leakage;
@@ -1261,19 +1267,19 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergyOther = wlDecoder.readDynamicEnergy + wlNewDecoderDriver.readDynamicEnergy + wlDecoderDriver.readDynamicEnergy + ( ((numColMuxed > 1)==true? (mux.readDynamicEnergy + muxDecoder.readDynamicEnergy):0) )/numReadPulse;
 
 				// Write					
-				// writeDynamicEnergyArray = writeDynamicEnergyArray;
-				// writeDynamicEnergy = 0;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergyArray = writeDynamicEnergyArray;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy = 0;
 				// if (cell.writeVoltage > 1.5) {
 					// wllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
 					// bllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
 					// sllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);	
-					// writeDynamicEnergy += wllevelshifter.writeDynamicEnergy + bllevelshifter.writeDynamicEnergy + sllevelshifter.writeDynamicEnergy; 
+					if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wllevelshifter.writeDynamicEnergy + bllevelshifter.writeDynamicEnergy + sllevelshifter.writeDynamicEnergy; 
 				// }
-				// writeDynamicEnergy += wlDecoder.writeDynamicEnergy;
-				// writeDynamicEnergy += wlNewDecoderDriver.writeDynamicEnergy;
-				// writeDynamicEnergy += wlDecoderDriver.writeDynamicEnergy;
-				// writeDynamicEnergy += slSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += writeDynamicEnergyArray;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlDecoder.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlNewDecoderDriver.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlDecoderDriver.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += slSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += writeDynamicEnergyArray;
 				
 				// Leakage
 				leakage = 0;
@@ -1337,18 +1343,18 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergyOther = wlNewSwitchMatrix.readDynamicEnergy + wlSwitchMatrix.readDynamicEnergy + ( ((numColMuxed > 1)==true? (mux.readDynamicEnergy + muxDecoder.readDynamicEnergy):0) )/numReadPulse;
 				
 				// Write				
-				// writeDynamicEnergyArray = writeDynamicEnergyArray;
-				// writeDynamicEnergy = 0;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergyArray = writeDynamicEnergyArray;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy = 0;
 				// if (cell.writeVoltage > 1.5) {
 					// wllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
 					// bllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
 					// sllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
-					// writeDynamicEnergy += wllevelshifter.writeDynamicEnergy + bllevelshifter.writeDynamicEnergy + sllevelshifter.writeDynamicEnergy;
+					if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wllevelshifter.writeDynamicEnergy + bllevelshifter.writeDynamicEnergy + sllevelshifter.writeDynamicEnergy;
 				// }
-				// writeDynamicEnergy += wlNewSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += wlSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += slSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += writeDynamicEnergyArray;				
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlNewSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += slSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += writeDynamicEnergyArray;				
 				
 				// Leakage
 				leakage = 0;
@@ -1399,19 +1405,19 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergy += readDynamicEnergyArray;
 
 				// Write				
-				// writeDynamicEnergyArray = writeDynamicEnergyArray;
-				// writeDynamicEnergy = 0;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergyArray = writeDynamicEnergyArray;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy = 0;
 				// if (cell.writeVoltage > 1.5) {
 					// wllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
 					// bllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
 					// sllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
-					// writeDynamicEnergy += wllevelshifter.writeDynamicEnergy + bllevelshifter.writeDynamicEnergy + sllevelshifter.writeDynamicEnergy;
+					if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wllevelshifter.writeDynamicEnergy + bllevelshifter.writeDynamicEnergy + sllevelshifter.writeDynamicEnergy;
 				// }
-				// writeDynamicEnergy += wlDecoder.writeDynamicEnergy;
-				// writeDynamicEnergy += wlNewDecoderDriver.writeDynamicEnergy;
-				// writeDynamicEnergy += wlDecoderDriver.writeDynamicEnergy;
-				// writeDynamicEnergy += slSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += writeDynamicEnergyArray;				
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlDecoder.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlNewDecoderDriver.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlDecoderDriver.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += slSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += writeDynamicEnergyArray;				
 				
 				// Leakage
 				leakage = 0;
@@ -1463,18 +1469,18 @@ void SubArray::CalculatePower(const vector<double> &columnResistance) {
 				readDynamicEnergy += sarADC.readDynamicEnergy;
 
 				// Write				
-				// writeDynamicEnergyArray = writeDynamicEnergyArray;
-				// writeDynamicEnergy = 0;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergyArray = writeDynamicEnergyArray;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy = 0;
 				// if (cell.writeVoltage > 1.5) {
 					// wllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
 					// bllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
 					// sllevelshifter.CalculatePower(0, 2*numWriteOperationPerRow*numRow*activityRowWrite, activityRowRead);
-					// writeDynamicEnergy += wllevelshifter.writeDynamicEnergy + bllevelshifter.writeDynamicEnergy + sllevelshifter.writeDynamicEnergy;
+					if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wllevelshifter.writeDynamicEnergy + bllevelshifter.writeDynamicEnergy + sllevelshifter.writeDynamicEnergy;
 				// }
-				// writeDynamicEnergy += wlNewSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += wlSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += slSwitchMatrix.writeDynamicEnergy;
-				// writeDynamicEnergy += writeDynamicEnergyArray;				
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlNewSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += wlSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += slSwitchMatrix.writeDynamicEnergy;
+				if(WRITE_ENERGY_ENABLE) writeDynamicEnergy += writeDynamicEnergyArray;				
 				
 				// Leakage
 				leakage = 0;

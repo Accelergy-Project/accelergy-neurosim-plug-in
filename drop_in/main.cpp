@@ -152,6 +152,9 @@ void Initalize(int _numRow, int _numCol, InputParameter& inputParameter, Technol
 	/* Create SubArray object and link the required global objects (not initialization) */
 	inputParameter.temperature = param->temp;   // Temperature (K)
 	inputParameter.processNode = param->technode;    // Technology node
+
+	tech.vdd_override = param->vdd;	// Override default Vdd
+	tech.vth_override = param->vth;	// Override default Vth
 	tech.Initialize(inputParameter.processNode, inputParameter.deviceRoadmap, inputParameter.transistorType);
 	
 	cell.resistanceOn = param->resistanceOn;	                                // Ron resistance at Vr in the reported measurement data (need to recalculate below if considering the nonlinearity)
@@ -478,6 +481,8 @@ void CalculateEnergy(MemCell& cell) {
 		// OFF: One connected cell OFF. ON: One connected cell ON.
 		double cellWriteEnergyLo = cell.writePulseWidth * pow(cell.writeVoltage, 2) * subArray->numWritePulse / GetColumnResistance(cell, 0, 1, 1)[0];
 		double cellWriteEnergyHi = cell.writePulseWidth * pow(cell.writeVoltage, 2) * subArray->numWritePulse / GetColumnResistance(cell, subArray->numRow, 1, 1)[0];
+		cellWriteEnergyLo += tech.vdd * tech.vdd * subArray->capRow2 * subArray->numWritePulse / subArray->numCol; // Assume all columns are written together
+		cellWriteEnergyHi += tech.vdd * tech.vdd * subArray->capRow2 * subArray->numWritePulse / subArray->numCol; // Assume all columns are written together
 		double cellLeakage = 0;
 		double cellWriteEnergyLoHalfSelected = cellWriteEnergyLo / 4; // Half voltage -> v^2 is quartered
 		double cellWriteEnergyHiHalfSelected = cellWriteEnergyHi / 4;
@@ -489,7 +494,8 @@ void CalculateEnergy(MemCell& cell) {
 			cellLeakage = CalculateGateLeakage(INV, 1, cell.widthSRAMCellNMOS * tech.featureSize,
 						cell.widthSRAMCellPMOS * tech.featureSize, inputParameter.temperature, tech) * tech.vdd * 2;
 			CalculateEnergy(cell, 0, 1, 0, 1, 0);
-			cellWriteEnergyLo = cellWriteEnergyHi = subArray->writeDynamicEnergyArray;
+			cellWriteEnergyLo += subArray->writeDynamicEnergyArray;
+			cellWriteEnergyHi += subArray->writeDynamicEnergyArray;
 		}
 		double cellArea = subArray->widthArray * subArray->heightArray / subArray->numRow / subArray->numCol;
 		printStats("Memcell CELLHI Sel.", 0, 0, 0, cellWriteEnergyHi, cellArea, cellLeakage, 0, true);

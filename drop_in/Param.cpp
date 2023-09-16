@@ -109,9 +109,9 @@ void Param::Initialize() {
 	
 	// TIMELOOP: Doesn't matter. We keep LP conventiaonal transistors.
 	transistortype = 1;     	// 1: inputParameter.transistorType = conventional
-	deviceroadmap = -1;      	// 1: inputParameter.deviceRoadmap = HP
-								// 2: inputParameter.deviceRoadmap = LSTP
-								// -1: LP
+	deviceroadmap = rint("deviceRoadmap"); // 1: inputParameter.deviceRoadmap = HP
+								           // 2: inputParameter.deviceRoadmap = LSTP
+								           // -1: LP
 	
 	// TIMELOOP: Doesn't matter. We don't use NeuroSim buffers.
 	globalBufferType = false;    // false: register file
@@ -144,8 +144,8 @@ void Param::Initialize() {
 								// true: pipeline process
 	speedUpDegree = 8;          // 1 = no speed up --> original speed
 								// 2 and more : speed up ratio, the higher, the faster
-								// A speed-up degree upper bound: when there is no idle period during each layer --> no need to further fold the system clock
-								// This idle period is defined by IFM sizes and data flow, the actual process latency of each layer may be different due to extra peripheries
+								// A speed-up degree upper bound: when there is no leak period during each layer --> no need to further fold the system clock
+								// This leak period is defined by IFM sizes and data flow, the actual process latency of each layer may be different due to extra peripheries
 	
 	validated = true;			// false: no calibration factors
 								// true: validated by silicon data (wiring area in layout, gate switching activity, post-layout performance drop...)
@@ -228,6 +228,10 @@ void Param::Initialize() {
 	writeVoltage = rfloat("writeVoltage");											// Enable level shifer if writeVoltage > 1.5V
 	writePulseWidth = rfloat("writePulseWidth"); //2ns
 	numWritePulse = rfloat("numWritePulse");
+
+	cellCapacitanceAdjust = rfloat("cellCapacitanceAdjust"); // fF
+	vdd = rfloat("vdd");
+	vth = rfloat("vth");
 
 	/*** Calibration parameters ***/
 	if(validated){

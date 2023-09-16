@@ -32,62 +32,75 @@ CACHE = {}
 #   If REQUIRED in docstring, then a value is required. Otherwise, default is populated.
 #   If a parameter is not used in an estimation (e.g. creating a shift+add), then the defaults will
 #   be used for the non-selected device (PIM_PARAMS defaults for rows & columns are used).
-PIM_PARAMS = {
-    'rows':                    ('REQUIRED: Number of rows in a crossbar.', 32),
-    'cols':                     ('REQUIRED: Number of columns in a crossbar.', 32),
-    'cols_active_at_once':      ('REQUIRED: Number of columns active at once.', 8),
-    'cell_config':              (f'REQUIRED: Path to a NVSim cell config file to use, or one of '
-                                 f'the following samples: ' +
-                                 f', '.join(
-                                     f'"{s}"' for s in SAMPLE_CELLS), 'placeholder',
-                                 str),
-    'average_input_value':      (f' REQUIRED: Average input value to a row. Must be between '
-                                 f'0 and 1.', 1, float),
-    'average_cell_value':       (f' REQUIRED: Average cell value. Must be between 0 and 1.', 1,
-                                 float),
-    'latency':                  (f'REQUIRED: Latency between two subsequent reads of a cell in ns',
-                                 1e-7, float),
-    'sequential':               (f'OPTIONAL: Sequential mode. Default is False. If True, the '
-                                 f'crossbar will be set up to activate one row at a time. '
-                                 f'Can be used as a memory this way.', False),
-    'adc_resolution':           (f'OPTIONAL: ADC resolution. Set this if to use Neurosim\'s '
-                                 f'build-in ADC. Default is False.', 0),
-    'read_pulse_width':         (f'OPTIONAL: Read pulse width. Default is 10ns.', 1e-8, float),
-
-    'voltage_dac_bits':        (f'OPTIONAL: Resolution of a voltage DAC for inputs.', 1, int),
-    'temporal_dac_bits':       (f'OPTIONAL: Resolution of a temporal DAC for inputs.', 1, int),
-    'temporal_spiking':        (f'OPTIONAL: Whether to use a spiking (#pulses) or a PWM (pulse  '
-                                f'length) approach for temporal DAC. Default is True ', True, bool),
-    'adc_action_share':        (f'OPTIONAL: Manual scaling of ADC energy/op. Use this to simulate'
-                                f' an ADC more or less efficient than Neurosim\'s build-in ADC. ',
-                                1, float),
-    'adc_area_share':          (f'OPTIONAL: Manual scaling of ADC area. Use this to simulate'
-                                f' an ADC larger or smaller than Neurosim\'s build-in ADC. ',
-                                1, float),
+SHARED_PARAMS = {
+    'global_cycle_seconds': (f'REQUIRED: Duration of one cycle in seconds', 1e-9, float),
 }
 
-ADDER_PARAMS = {
+
+PIM_PARAMS = {**{
+    'rows':
+        ('REQUIRED: Number of rows in a crossbar.', 32),
+    'cols':
+        ('REQUIRED: Number of columns in a crossbar.', 32),
+    'cols_active_at_once':
+        ('REQUIRED: Number of columns active at once.', 8),
+    'cell_config':
+        (f'REQUIRED: Path to a NVSim cell config file to use, or one of '
+         f'the following samples: ' +
+         f', '.join(f'"{s}"' for s in SAMPLE_CELLS), 'placeholder', str),
+    'average_input_value':
+        (f' REQUIRED: Average input value to a row. Must be between 0 and 1.',
+         1, float),
+    'average_cell_value':
+        (f' REQUIRED: Average cell value. Must be between 0 and 1.', 1, float),
+    'sequential':
+        (f'OPTIONAL: Sequential mode. Default is False. If True, the '
+         f'crossbar will be set up to activate one row at a time. '
+         f'Can be used as a memory this way.', False),
+    'adc_resolution':
+        (f'OPTIONAL: ADC resolution. Set this if to use Neurosim\'s '
+         f'build-in ADC. Default is False.', 0),
+    'read_pulse_width':
+        (f'OPTIONAL: Read pulse width. Default is 10ns.', 1e-8, float),
+    'voltage_dac_bits':
+        (f'OPTIONAL: Resolution of a voltage DAC for inputs.', 1, int),
+    'temporal_dac_bits':
+        (f'OPTIONAL: Resolution of a temporal DAC for inputs.', 1, int),
+    'temporal_spiking':
+        (f'OPTIONAL: Whether to use a spiking (#pulses) or a PWM (pulse  '
+         f'length) approach for temporal DAC. Default is True ', True, bool),
+    'voltage':
+        (f'OPTIONAL: Supply voltage. Default set by the technology node.',
+         0, float),
+    'threshold_voltage':
+        (f'OPTIONAL: Threshold voltage. Default set by the technology '
+         f'node.', 0, float),
+}, **SHARED_PARAMS}
+
+ADDER_PARAMS = {**{
     'n_bits':                   (f'REQUIRED: # Bits of the adder.', 8),
-}
-SHIFT_ADD_PARAMS = {
+}, **SHARED_PARAMS}
+
+SHIFT_ADD_PARAMS = {**{
     'n_bits':                   (f'REQUIRED: # Bits of the adder.', 8),
     'shift_register_n_bits':    (f'REQUIRED: # Bits of the shift register.', 16),
-}
-MAX_POOL_PARAMS = {
+}, **SHARED_PARAMS}
+MAX_POOL_PARAMS = {**{
     'n_bits':                   (f'REQUIRED: # Bits.', 8),
     'pool_window':              (f'REQUIRED: Window size of max pooling.', 2),
-}
-ADDER_TREE_PARAMS = {
+}, **SHARED_PARAMS}
+ADDER_TREE_PARAMS = {**{
     'n_bits':                   (f'REQUIRED: # Bits of the leaf adder.', 8),
     'n_adder_tree_inputs':      (f'REQUIRED: Number of inputs to the adder tree.', 2),
-}
-MUX_PARAMS = {
+}, **SHARED_PARAMS}
+MUX_PARAMS = {**{
     'n_mux_inputs':             (f'REQUIRED: Number of inputs to the mux.', 2),
     'n_bits':                   (f'REQUIRED: # Bits of the mux.', 8),
-}
-FLIP_FLOP_PARAMS = {
+}, **SHARED_PARAMS}
+FLIP_FLOP_PARAMS = {**{
     'n_bits':                   (f'REQUIRED: # Bits of flip-flop.', 8),
-}
+}, **SHARED_PARAMS}
+
 PARAM_DICTS = [
     PIM_PARAMS, ADDER_PARAMS, SHIFT_ADD_PARAMS,
     MAX_POOL_PARAMS, ADDER_TREE_PARAMS, MUX_PARAMS, FLIP_FLOP_PARAMS
@@ -111,9 +124,9 @@ READ_ACTIONS = [
     'mac_reused', 'compute', 'add', 'shift_add', 'max_pool', 'maxpool'
     'convert', 'activate']
 WRITE_ACTIONS = ['write', 'set', 'erase']
-IDLE_ACTIONS = ['idle', 'gated_read',
+LEAK_ACTIONS = ['leak', 'gated_read',
                 'gated_write', 'skipped_read', 'skipped_write']
-ALL_ACTIONS = READ_ACTIONS + WRITE_ACTIONS + IDLE_ACTIONS
+ALL_ACTIONS = READ_ACTIONS + WRITE_ACTIONS + LEAK_ACTIONS
 
 # Accelergy prmiitive components supported and their internal names
 SUPPORTED_CLASSES = {
@@ -153,14 +166,15 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
         'cols': attrs['cols'],
         'cols_muxed': math.ceil(attrs['rows'] / attrs['cols_active_at_once']),
         'technology': attrs['technology'],
-        'adc_resolution': attrs['adc_resolution'],
+        'adc_resolution': attrs[f'adc_resolution'],
         'read_pulse_width': attrs['read_pulse_width'],
-        'latency': attrs['latency'],
+        'global_cycle_seconds': attrs['global_cycle_seconds'],
+        'cycle_seconds': attrs['cycle_seconds'],
         'voltage_dac_bits': attrs['voltage_dac_bits'],
         'temporal_dac_bits': attrs['temporal_dac_bits'],
         'temporal_spiking': attrs['temporal_spiking'],
-        'adc_action_share': attrs['adc_action_share'],
-        'adc_area_share': attrs['adc_area_share'],
+        'voltage': attrs['voltage'],
+        'threshold_voltage': attrs['threshold_voltage'],
     }
     if key not in CACHE:
         CACHE[key] = neurointerface.Crossbar(**attrs)
@@ -244,6 +258,11 @@ def get_neurosim_output(kind: str, attributes: dict) -> Dict[str, float]:
     # to just p. If p is not in PERMITTED_TECH_NODES, then we interpolate between the two closest.
     t = to_pass['technology']
     del to_pass['technology']
+
+    for k in attributes:
+        if k not in to_pass:
+            to_pass[k] = attributes[k]
+
     hi = min(p for p in PERMITTED_TECH_NODES if p >= t)
     lo = max(p for p in PERMITTED_TECH_NODES if p <= t)
     interp_pt = (t - lo) / (hi - lo) if hi - lo else 0
@@ -387,7 +406,7 @@ if __name__ == '__main__':
             'average_cell_value': 1,
             'sequential': 1,
             'adc_resolution': 0,
-            'latency': 100},
+            'cycle_seconds': 100e-9},
     }
 
     a = []

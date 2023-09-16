@@ -85,6 +85,11 @@ public:
 	int numRowPerSynapse, numColPerSynapse;
 	double AR, Rho, wireLengthRow, wireLengthCol, unitLengthWireResistance, wireResistanceRow, wireResistanceCol;
 	
+	double vdd;
+	double vth;
+
+	double cellCapacitanceAdjust;
+
 	double alpha, beta, gamma, delta, epsilon, zeta;
 };
 

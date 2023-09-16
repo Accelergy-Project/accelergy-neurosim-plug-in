@@ -54,7 +54,6 @@ NV_TO_NEURO = [
     ('heightInFeatureSizeSRAM:', lambda: PARSED['heightInFeatureSize1T1R:']),
     ('widthInFeatureSizeSRAM:', lambda: PARSED['widthInFeatureSize1T1R:']),
 
-
     ##
     # SRAM Configuration
     ('-AccessCMOSWidth (F):', 'widthAccessCMOS:'),
@@ -97,10 +96,10 @@ NV_TO_NEURO = [
     # ('readPulseWidth:', lambda: PARSED['READ_ENERGY'] \
     #    / (PARSED['readVoltage:'] ** 2 * PARSED['AVG_CONDUCTANCE'])),
     #('readPulseWidth:', lambda: PARSED.get('readPulseWidth:', 1e-8)),
+    ('accessVoltage:', lambda: PARSED['readVoltage:']),
+    ('-CellCapacitanceAdjust (F):', 'cellCapacitanceAdjust:'),
+    ('-DeviceRoadmap -1LP 1HP 2LSTP:', 'deviceRoadmap:'),
 
-    # Activate transistor if CMOS, else raise to read voltage
-    ('accessVoltage:',
-     lambda: 0.7 if PARSED['accesstype:'] == 1 else PARSED['readVoltage:']),
 ]
 
 
@@ -158,9 +157,10 @@ def cfgset(setting: str, text: str, value: float):
     return text
 
 
-def buildcfg(cellpath: str, cfgpath: str) -> str:
+def buildcfg(cellpath: str, cfgpath: str) -> Tuple[str, Dict[str, float]]:
     """ Populates a Neurosim config with the values from the cell file and returns contents """
     PARSED.clear()
+    other_vars = {}
     fails = {}
     with open(cellpath, 'r') as f:
         celltext = f.read()
@@ -170,6 +170,13 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
     # Parse ternaries
     for k, v in NV_TO_NEURO_TERNARIES.items():
         PARSED[v[0]] = v[1] if nvsimget(k, celltext, True) else v[2]
+
+    if nvsimget('-CellReadLeakEnergyMultiplier:', celltext, True):
+        other_vars['cell_read_leak_energy_mult'] = nvsimget(
+            '-CellReadLeakEnergyMultiplier:', celltext, False)
+    if nvsimget('-CellWriteEnergyMultiplier:', celltext, True):
+        other_vars['cell_write_energy_mult'] = nvsimget(
+            '-CellWriteEnergyMultiplier:', celltext, False)
 
     logger.info('Neurosim Plugin parsing cell file...')
 
@@ -215,7 +222,7 @@ def buildcfg(cellpath: str, cfgpath: str) -> str:
     for k, v in PARSED.items():
         cfgtext = cfgset(k, cfgtext, v)
 
-    return cfgtext
+    return cfgtext, other_vars
 
 # ==================================================================================================
 # NEUROSIM OUTPUT PARSING. THESE FUNCTIONS ARE USED AFTER NEUROSIM IS CALLED.
@@ -257,12 +264,14 @@ class Crossbar:
                  technology: int,
                  adc_resolution: int,
                  read_pulse_width: float,
-                 latency: float,
+                 global_cycle_seconds: float,
+                 cycle_seconds: float,
                  voltage_dac_bits: int,
                  temporal_dac_bits: int,
                  temporal_spiking: bool,
-                 adc_action_share: float,
-                 adc_area_share: float,):
+                 voltage: float,
+                 threshold_voltage: float,
+                 ):
 
         self.comps = []
         self.sequential = 1 if sequential else 2
@@ -273,12 +282,17 @@ class Crossbar:
         self.num_output_levels = 2 ** adc_resolution
         self.has_adc = adc_resolution > 0
         self.read_pulse_width = read_pulse_width
-        self.latency = latency
+        self.global_cycle_seconds = global_cycle_seconds
+        self.cycle_seconds = cycle_seconds
         self.voltage_dac_bits = voltage_dac_bits
         self.temporal_dac_bits = temporal_dac_bits
         self.temporal_spiking = temporal_spiking
-        self.adc_action_share = adc_action_share
-        self.adc_area_share = adc_area_share
+        self.adc_action_share = 1
+        self.adc_area_share = 1
+        self.cell_read_leak_action_share = 1
+        self.cell_write_action_share = 1
+        self.voltage = voltage
+        self.threshold_voltage = threshold_voltage
 
         self.max_activation_time = 2 ** self.temporal_dac_bits - 1
 
@@ -287,17 +301,23 @@ class Crossbar:
         logger.info('Building a crossbar with cell file %s', cellfile)
 
         # Build config
-        cfg = buildcfg(cellfile, cfgfile)
+        cfg, other_vars = buildcfg(cellfile, cfgfile)
+        self.cell_read_leak_action_share *= other_vars.get(
+            'cell_read_leak_energy_mult', 1)
+        self.cell_write_action_share *= other_vars.get(
+            'cell_write_energy_mult', 1)
         # Make sure cols_muxed is set before cols so that you don't get part of the name
         # overwritten
         my_set = ['sequential', 'cols_muxed', 'rows', 'cols',
-                  'technology', 'num_output_levels', 'read_pulse_width']
+                  'technology', 'num_output_levels', 'read_pulse_width',
+                  'voltage', 'threshold_voltage']
         for to_set in my_set:
             logger.debug('Setting %s to %s', to_set, getattr(self, to_set))
             cfg = replace_cfg(to_set, getattr(self, to_set), cfg, cfgfile)
         for to_set in [a for a in other_args if a[0] not in my_set]:
             logger.debug('Setting %s to %s', to_set[0], to_set[1])
-            cfg = replace_cfg(to_set[0], to_set[1], cfg, cfgfile)
+            if 'global_cycle_seconds' not in to_set[0]:
+                cfg = replace_cfg(to_set[0], to_set[1], cfg, cfgfile)
 
         # Write config
         inputpath = os.path.realpath(CFG_WRITE_PATH)
@@ -343,6 +363,10 @@ class Crossbar:
         min_latency = nvsimget('Minimum latency per read:', results, False)
         logger.info('Crossbar minimum latency is %s ns to read %s columns at once.',
                     min_latency, columns_at_once)
+        if min_latency < self.cycle_seconds * 1e9:
+            logger.warning(
+                'Minimum crossbar latency of %s ns is less than the cycle '
+                'time of %s ns.', min_latency, self.cycle_seconds * 1e9)
 
     def get_components(self, read: bool, hi: bool) -> List[Component]:
         """ Returns a list of components matching the criteria """
@@ -388,13 +412,13 @@ class Crossbar:
         """ Returns the leakage of all peripherals. """
         # Grab from the read section because read section has all components. Only 'row' or 'col'
         # components to exlude array (which has everything plus extras we don't want) and cells
-        return sum(c.leakage for c in self.comps if 'row' in c.name or 'col' in c.name and c.read)
+        return sum(c.leakage for c in self.comps if 'row' in c.name or 'col' in c.name and c.read) * self.global_cycle_seconds
 
     def leakage_per_cell(self) -> float:
         """ Returns the leakage of a single cell."""
         # Cell leakage is reported several places. Here we just grab it in the write section for a
         # HI cell.
-        return sum(c.leakage for c in self.comps if c.read and 'memcell cellhi' in c.name)
+        return sum(c.leakage for c in self.comps if c.read and 'memcell cellhi' in c.name) * self.global_cycle_seconds
 
     def activation_energy(self, target: str) -> float:
         """ Returns the energy of a given misc component. """
@@ -409,7 +433,7 @@ class Crossbar:
     def leakage(self, target: str) -> float:
         """ Returns the leakage of a given misc component. """
         comps = self.get_components(True, True)
-        return sum(c.leakage for c in comps if target.lower() in c.name)
+        return sum(c.leakage for c in comps if target.lower() in c.name) * self.global_cycle_seconds
 
 
 def stats2dict(read_energy: float, write_energy: float, area: float, leakage: float) \
@@ -441,8 +465,7 @@ def rowcol_stats(crossbar: Crossbar, avg_input: float, avg_cell: float, kind: st
     leakage = crossbar.leakage(kind)
     read = read_off + (read_on - read_off) * avg_input
     write = write_on  # Can't gate writes becasuse we still have to reset cells
-    rw_leakage = 0
-    return stats2dict(read + rw_leakage, write + rw_leakage, area, leakage)
+    return stats2dict(read, write, area, leakage * crossbar.global_cycle_seconds)
 
 
 def row_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
@@ -483,11 +506,13 @@ def cell_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[st
 
     # Cells will have a substantial leakage impact
     # Also multiply read energy by temporal DAC bits
-    return stats2dict(read_memcell_energy * crossbar.max_activation_time
-                      + crossbar.leakage_per_cell() * crossbar.latency,
-                      write_memcell_energy,
+    rlscale = crossbar.cell_read_leak_action_share
+    act_time = crossbar.max_activation_time
+    wscale = crossbar.cell_write_action_share
+    return stats2dict(read_memcell_energy * act_time,
+                      write_memcell_energy * wscale,
                       crossbar.area_per_cell(),
-                      crossbar.leakage_per_cell())
+                      crossbar.leakage_per_cell() * rlscale)
 
 
 def misc_stats(crossbar: Crossbar, target: str) -> Dict[str, float]:
@@ -507,7 +532,10 @@ def adder_tree_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> D
 
 def adder_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for adder energy, area, and leakage. """
-    return misc_stats(crossbar, 'adder')
+    # Our name-grabbing scheme picks up
+    adder_stats = misc_stats(crossbar, 'adder')
+    adder_tree_stats = misc_stats(crossbar, 'adder tree')
+    return {k: adder_stats[k] - adder_tree_stats[k] for k in adder_stats}
 
 
 def shift_add_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
@@ -543,63 +571,3 @@ def nor_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dic
 def nand_gate_stats(crossbar: Crossbar, avg_input: float, avg_cell: float) -> Dict[str, float]:
     """ Returns dictionary of stats for nand gate energy, area, and leakage. """
     return misc_stats(crossbar, 'nand gate')
-
-
-if __name__ == '__main__':
-    SEQUENTIAL = 0
-    ROWS = 256
-    COLS = 256
-    COLS_MUXED = 8
-    TECHNODE = 32
-    adc_resolution = 12
-    CROSSBAR = Crossbar(SEQUENTIAL, ROWS, COLS, COLS_MUXED,
-                        TECHNODE, adc_resolution)
-
-    CELLFILE = 'cells/isaac.cell'
-
-    row_on = []
-    row_off = []
-    col_on = []
-    col_off = []
-    area = []
-    leakage = []
-    cell = []
-
-    SCALE = [16, 32, 64, 128, 256, 512, 1024]
-    XLABEL = 'Rows&Columns'
-    #SCALE = [7, 10, 14, 22, 32, 45, 65, 90, 130]
-    #XLABEL = 'Technology Node'
-
-    for s in SCALE:
-        CROSSBAR.rows, CROSSBAR.cols = s, s
-        CROSSBAR.run_neurosim(CELLFILE, DEFAULT_CONFIG)
-        row_on.append(CROSSBAR.energy_on('row', True, True) * CROSSBAR.rows)
-        row_off.append(CROSSBAR.energy_off('row', True, True) * CROSSBAR.rows)
-        col_on.append(CROSSBAR.energy_on('col', True, True) * CROSSBAR.cols)
-        col_off.append(CROSSBAR.energy_off('col', True, True) * CROSSBAR.cols)
-        area.append(CROSSBAR.area('row') + CROSSBAR.area('col'))
-        leakage.append(CROSSBAR.leakage_peripheral())
-        cell.append(CROSSBAR.energy_cell(True, True) *
-                    0.1 * CROSSBAR.rows * CROSSBAR.cols)
-
-    print('Row_ON: ' + f' '.join(str(s) for s in row_on))
-    print('Row_OFF: ' + f' '.join(str(s) for s in row_off))
-    print('Col_ON: ' + f' '.join(str(s) for s in col_on))
-    print('Col_OFF: ' + f' '.join(str(s) for s in col_off))
-    print('Area: ' + f' '.join(str(s) for s in area))
-    print('Leakage: ' + f' '.join(str(s) for s in leakage))
-
-    from matplotlib import pyplot as plt
-
-    plt.plot(SCALE, row_on, label='Row_ON')
-    plt.plot(SCALE, row_off, label='Row_OFF')
-    plt.plot(SCALE, col_on, label='Col_ON')
-    plt.plot(SCALE, col_off, label='Col_OFF')
-    plt.plot(SCALE, [l * 1e-7 for l in leakage], label='Leakage pJ/100ns')
-    plt.plot(SCALE, cell, label='Cell')
-    #plt.plot(SCALE, area, label='Area')
-    plt.xlabel(XLABEL)
-    plt.ylabel('Energy/Activation (pJ)')
-    plt.legend()
-    plt.title(CELLFILE.split('.')[0].split('/')[-1])
-    plt.savefig("mygraph.png")
