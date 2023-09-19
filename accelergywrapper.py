@@ -68,7 +68,7 @@ PIM_PARAMS = {**{
         (f'OPTIONAL: Resolution of a temporal DAC for inputs.', 1, int),
     'temporal_spiking':
         (f'OPTIONAL: Whether to use a spiking (#pulses) or a PWM (pulse  '
-         f'length) approach for temporal DAC. Default is True ', True, bool),
+         f'length) approach for temporal DAC. Default is True ', False, bool),
     'voltage':
         (f'OPTIONAL: Supply voltage. Default set by the technology node.',
          0, float),
