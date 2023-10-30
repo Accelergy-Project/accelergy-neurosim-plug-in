@@ -156,7 +156,10 @@ void Initalize(int _numRow, int _numCol, InputParameter& inputParameter, Technol
 	tech.vdd_override = param->vdd;	// Override default Vdd
 	tech.vth_override = param->vth;	// Override default Vth
 	tech.Initialize(inputParameter.processNode, inputParameter.deviceRoadmap, inputParameter.transistorType);
-	
+	param->readVoltage = param->readVoltage == 0 ? tech.vdd : param->readVoltage;
+	param->writeVoltage = param->writeVoltage == 0 ? tech.vdd : param->writeVoltage;
+	param->accessVoltage = param->accessVoltage == 0 ? tech.vdd : param->accessVoltage;
+
 	cell.resistanceOn = param->resistanceOn;	                                // Ron resistance at Vr in the reported measurement data (need to recalculate below if considering the nonlinearity)
 	cell.resistanceOff = param->resistanceOff;	                                // Roff resistance at Vr in the reported measurement dat (need to recalculate below if considering the nonlinearity)
 	cell.resistanceAvg = (cell.resistanceOn + cell.resistanceOff)/2;            // Average resistance (for energy estimation)
