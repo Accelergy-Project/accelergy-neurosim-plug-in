@@ -9,18 +9,22 @@ CELLS = [
     os.path.join('cells', c) for c in os.listdir(os.path.join(SCRIPT_DIR, 'cells'))
 ]
 
+
 def readme():
     """ Returns readme contents """
     with open('README.md') as f:
         return f.read()
 
+
 class Build(build_ext):
     """Calls makefile"""
+
     def run(self):
         print('Building NeuroSim')
         if subprocess.call(['make', 'make']) != 0:
             sys.exit(-1)
         build_ext.run(self)
+
 
 setup(
     name='accelergy-neurosim-plug-in',
@@ -39,18 +43,17 @@ setup(
     install_requires=[],
     python_requires='>=3.8',
     data_files=[
-        ('share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/', \
+        ('share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/',
             ['./accelergywrapper.py', './neurointerface.py', './default_config.cfg']),
-        ('share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/', \
+        ('share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/',
             ['./neurosim.estimator.yaml']),
-        ('share/accelergy/primitive_component_libs/', \
+        ('share/accelergy/primitive_component_libs/',
             ['neurosim_components.lib.yaml']),
-        ('share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/NeuroSim/', \
+        ('share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/NeuroSim/',
             ['./NeuroSim/main']),
-        ('share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/cells/', \
+        ('share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/cells/',
             CELLS),
     ],
-    include_package_data=True,
     entry_points={},
     zip_safe=False,
     cmdclass={
