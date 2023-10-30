@@ -3,16 +3,19 @@ Interface for Neurosim. Exposes row, column, and cell energy in terms of OFF and
 includes integration of cell files from NVSim and NVMExplorer.
 """
 from statistics import mean
+import threading
 from typing import Dict, List, Tuple
 from numbers import Number
 import os
 import subprocess
 import re
+import os
 
+MY_PID = os.getpid()
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_CONFIG = os.path.join(SCRIPT_DIR, 'default_config.cfg')
 NEUROSIM_PATH = os.path.join(SCRIPT_DIR, 'NeuroSim/main')
-CFG_WRITE_PATH = os.path.join(SCRIPT_DIR, './neurosim_input.cfg')
+CFG_WRITE_PATH = os.path.join(SCRIPT_DIR, f'./neurosim_input_{MY_PID}.cfg')
 
 logger = None
 
@@ -328,13 +331,29 @@ class Crossbar:
         # Run
         logger.info('Running %s %s', NEUROSIM_PATH, inputpath)
         proc = subprocess.Popen(
-            [NEUROSIM_PATH, inputpath], stdout=subprocess.PIPE)
-        proc.wait()
-        results, err = proc.communicate()
-        if err:
+            [NEUROSIM_PATH, inputpath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        def read_pipe_thread(pipe, write_to: list):
+            while proc.poll() is None:
+                write_to.append(pipe.read().decode('utf-8'))
+            write_to.append(pipe.read().decode('utf-8'))
+
+        stdout, stderr = [], []
+        stdout_thread = threading.Thread(
+            target=read_pipe_thread, args=(proc.stdout, stdout))
+        stderr_thread = threading.Thread(
+            target=read_pipe_thread, args=(proc.stderr, stderr))
+        stdout_thread.start()
+        stderr_thread.start()
+        stdout_thread.join()
+        stderr_thread.join()
+        stdout, stderr = ''.join(stdout), ''.join(stderr)
+        if proc.returncode != 0:
             logger.error('NeuroSIM returned error code %s', proc.returncode)
-            logger.error(err.decode('utf-8'))
-        results = results.decode('utf-8')
+            logger.error(stderr)
+            raise ValueError(
+                'NeuroSIM returned error code %s', proc.returncode)
+        results = stdout
         logger.debug('NeuroSIM output:\n' + results)
         self.comps = [Component(line) for line in results.split(
             '\n') if '<COMPONENT>' in line]
@@ -367,6 +386,8 @@ class Crossbar:
             logger.warning(
                 'Minimum crossbar latency of %s ns is less than the cycle '
                 'time of %s ns.', min_latency, self.cycle_seconds * 1e9)
+        # Remove the config file
+        os.remove(inputpath)
 
     def get_components(self, read: bool, hi: bool) -> List[Component]:
         """ Returns a list of components matching the criteria """
