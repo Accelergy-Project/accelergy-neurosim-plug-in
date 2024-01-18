@@ -132,14 +132,14 @@ void Initalize(int _numRow, int _numCol, InputParameter& inputParameter, Technol
 		case 3:	    inputParameter.transistorType = TFET;          break;
 		case 2:	    inputParameter.transistorType = FET_2D;        break;
 		case 1:	    inputParameter.transistorType = conventional;  break;
-		case -1:	break;
+		case -1:	inputParameter.transistorType = conventional;  break;
 		default:	exit(-1);
 	}
 	
 	switch(param->deviceroadmap) {
 		case 2:	    inputParameter.deviceRoadmap = LSTP;  break;
 		case 1:	    inputParameter.deviceRoadmap = HP;    break;
-		case -1:	break;
+		case -1:	inputParameter.deviceRoadmap = LP;    break;
 		default:	exit(-1);
 	}
 	
@@ -249,6 +249,8 @@ vector<double> GetColumnResistance(MemCell& cell, int nCellsOn, int nRowsConnect
     bool parallelRead = param->parallelRead;
 
 	wireAwareProgramming = true;
+	// Set wireAwareProgramming based on the environment variable ACCELERGY_NEUROSIM_PLUG_IN_WIRE_AWARE_PROGRAM
+	wireAwareProgramming = getenv("ACCELERGY_NEUROSIM_WIRE_UNAWARE") == NULL; 
 	
     // CHANGES MADE: Removed loop through all weights.
 	// From Neurosim Chip.cpp:
@@ -272,14 +274,14 @@ vector<double> GetColumnResistance(MemCell& cell, int nCellsOn, int nRowsConnect
 		double accessResistance = cell.accessType == CMOS_access ? cell.resistanceAccess : 0;
 
 		// Wire unaware. Calculate for average wire resistance
-		double minConductance = 1.0 / (totalWireResistance + accessResistance + cell.resistanceOff);
-		double maxConductance = 1.0 / (totalWireResistance + totalWireResistance + cell.resistanceOn);
+		double minConductance = 1.0 / (cell.resistanceOff + totalWireResistance / 2 + accessResistance);
+		double maxConductance = 1.0 / (cell.resistanceOn + totalWireResistance / 2 + accessResistance);
 		//printf("minConductance = %e\n", minConductance);
 		//printf("maxConductance = %e\n", maxConductance);
 		// Wire aware. Min conductance of closest cell, max conductance of farthest cell
 		if(wireAwareProgramming) {
-			minConductance = 1.0 / (cell.resistanceOff + accessResistance);
-			maxConductance = 1.0 / (totalWireResistance + accessResistance + cell.resistanceOn);
+			minConductance = 1.0 / (totalWireResistance + cell.resistanceOff + accessResistance);
+			maxConductance = 1.0 / (totalWireResistance + cell.resistanceOn + accessResistance);
 		}
         columnG += minConductance * (subArray->numRow - nCellsOn) + maxConductance * nCellsOn;
 
@@ -412,21 +414,21 @@ void CalculateEnergy(MemCell& cell) {
 	//		RowDr: Row components
 	//		RowDrDAC: Row components + multiplied for multiple input voltage levels
 	//		ColRd: Column components
-	xbarComps.push_back(compStat("Array", 		  		subArray, 						0, &subArray->readDynamicEnergyArray, &subArray->writeDynamicEnergyArray, subArray->numCol, subArray->numColMuxed));
-	xbarComps.push_back(compStat("Row(WLDec)",   		&subArray->wlDecoder, 			0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
-	xbarComps.push_back(compStat("RowDAC(WLDrvNew)",  	&subArray->wlNewDecoderDriver,	0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
-	xbarComps.push_back(compStat("RowDAC(WLDrv)",		&subArray->wlDecoderDriver, 	0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
-	xbarComps.push_back(compStat("Row(WLSwch)", 		&subArray->wlSwitchMatrix, 		0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
-	xbarComps.push_back(compStat("RowDAC(WLSwchNew)",	&subArray->wlNewSwitchMatrix, 	0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
-	xbarComps.push_back(compStat("Row(SRAMWR)",			&subArray->sramWriteDriver,		0, NULL, NULL, subArray->numRow, 1));
-	xbarComps.push_back(compStat("Col(Mux)",			&subArray->mux, 				0, NULL, NULL, subArray->numCol, 1));
-	xbarComps.push_back(compStat("Col(MuxDec)", 		&subArray->muxDecoder,			0, NULL, NULL, subArray->numCol, 1));
-	xbarComps.push_back(compStat("Col(SLSwch)", 		&subArray->slSwitchMatrix,		0, NULL, NULL, subArray->numCol, 1));
+	xbarComps.push_back(compStat("Array", 		  		subArray, 							0, &subArray->readDynamicEnergyArray, &subArray->writeDynamicEnergyArray, subArray->numCol, subArray->numColMuxed));
+	xbarComps.push_back(compStat("Row(WLDec)",   		&subArray->wlDecoder, 				0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
+	xbarComps.push_back(compStat("RowDAC(WLDrvNew)",  	&subArray->wlNewDecoderDriver,		0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
+	xbarComps.push_back(compStat("RowDAC(WLDrv)",		&subArray->wlDecoderDriver, 		0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
+	xbarComps.push_back(compStat("Row(WLSwch)", 		&subArray->wlSwitchMatrix, 			0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
+	xbarComps.push_back(compStat("RowDAC(WLSwchNew)",	&subArray->wlNewSwitchMatrix, 		0, NULL, NULL, subArray->numRow, subArray->numColMuxed));
+	xbarComps.push_back(compStat("Row(SRAMWR)",			&subArray->sramWriteDriver,			0, NULL, NULL, subArray->numRow, 1));
+	xbarComps.push_back(compStat("Col(Mux)",			&subArray->mux, 					0, NULL, NULL, subArray->numCol, 1));
+	xbarComps.push_back(compStat("Col(MuxDec)", 		&subArray->muxDecoder,				0, NULL, NULL, subArray->numCol, 1));
+	xbarComps.push_back(compStat("Col(SLSwch)", 		&subArray->slSwitchMatrix,			0, NULL, NULL, subArray->numCol, 1));
 	std::vector<compStat> adcComps;
-	adcComps.push_back(compStat("Col|ADC(SAR)", 			&subArray->sarADC, 				0, NULL, NULL, subArray->numCol, 1));
-	adcComps.push_back(compStat("Col|ADC(MLSA)",			&subArray->multilevelSenseAmp, 	0, NULL, NULL, subArray->numCol, 1));
-	adcComps.push_back(compStat("Col|ADC(MLSAEnc)",		&subArray->multilevelSAEncoder, 0, NULL, NULL, subArray->numCol, 1));
-	adcComps.push_back(compStat("Col|ADC(SA)",			&subArray->senseAmp, 			0, NULL, NULL, subArray->numCol, 1));
+	adcComps.push_back(compStat("Col|ADC(SAR)", 		&subArray->sarADC, 					0, NULL, NULL, subArray->numCol, 1));
+	adcComps.push_back(compStat("Col|ADC(MLSA)",		&subArray->multilevelSenseAmp, 		0, NULL, NULL, subArray->numCol, 1));
+	adcComps.push_back(compStat("Col|ADC(MLSAEnc)",		&subArray->multilevelSAEncoder, 	0, NULL, NULL, subArray->numCol, 1));
+	adcComps.push_back(compStat("Col|ADC(SA)",			&subArray->senseAmp, 				0, NULL, NULL, subArray->numCol, 1));
 
 
 	if(genCrossbar) {
