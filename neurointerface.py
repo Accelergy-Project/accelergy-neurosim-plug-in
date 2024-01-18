@@ -76,6 +76,7 @@ NV_TO_NEURO = [
         1 / PARSED['resistanceOn:'] + 1 / PARSED['resistanceOff:']) / 2),
 
     ('-SetVoltage (V):', 'writeVoltage:'),
+    ('-WriteVoltage (V):', 'WriteVoltage:'),
     ('-SetPulse (ns):', ('writePulseWidth:', 1e-9)),
     ('-SetEnergy (pJ):', ('SET_ENERGY', 1e-12)),
     ('-SetCurrent (uA):', ('SET_CURRENT', 1e-6)),
@@ -99,7 +100,9 @@ NV_TO_NEURO = [
     # ('readPulseWidth:', lambda: PARSED['READ_ENERGY'] \
     #    / (PARSED['readVoltage:'] ** 2 * PARSED['AVG_CONDUCTANCE'])),
     #('readPulseWidth:', lambda: PARSED.get('readPulseWidth:', 1e-8)),
-    ('accessVoltage:', lambda: PARSED['readVoltage:']),
+    ('-AccessVoltage (V):', 'accessVoltage:'),
+    ('accessVoltage:', lambda: PARSED.get(
+        'accessVoltage:', PARSED['readVoltage:'])),
     ('-CellCapacitanceAdjust (F):', 'cellCapacitanceAdjust:'),
     ('-DeviceRoadmap -1LP 1HP 2LSTP:', 'deviceRoadmap:'),
 
@@ -331,7 +334,7 @@ class Crossbar:
         # Run
         logger.info('Running %s %s', NEUROSIM_PATH, inputpath)
         proc = subprocess.Popen(
-            [NEUROSIM_PATH, inputpath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            [NEUROSIM_PATH, inputpath], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
 
         def read_pipe_thread(pipe, write_to: list):
             while proc.poll() is None:
