@@ -164,7 +164,7 @@ def build_crossbar(attrs: dict) -> neurointerface.Crossbar:
         'sequential': attrs['sequential'],
         'rows': attrs['rows'],
         'cols': attrs['cols'],
-        'cols_muxed': math.ceil(attrs['rows'] / attrs['cols_active_at_once']),
+        'cols_muxed': math.ceil(attrs['cols'] / attrs['cols_active_at_once']),
         'technology': attrs['technology'],
         'adc_resolution': attrs[f'adc_resolution'],
         'read_pulse_width': attrs['read_pulse_width'],
