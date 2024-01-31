@@ -215,7 +215,7 @@ def get_neurosim_output(kind: str, attributes: dict) -> Dict[str, float]:
             else:
                 t = attributes[p]
             if t != attributes[p]:
-                print(
+                logger.warning(
                     f'WARN: Non-numeric {attributes[p]} for parameter {p}. Using {t} instead.')
             to_pass[p] = passtype(t)
         except ValueError as e:
