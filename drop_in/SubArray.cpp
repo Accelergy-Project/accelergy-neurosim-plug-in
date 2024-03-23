@@ -348,8 +348,8 @@ void SubArray::Initialize(int _numRow, int _numCol, double _unitWireRes){  //ini
 		}
 	} 
 	
-	capRow1 += _numCol * param->cellCapacitanceAdjust;
-	capRow2 += _numCol * param->cellCapacitanceAdjust;
+	capRow1 = capRow1 * param->cellCapacitanceMultiplier + _numCol * param->cellCapacitanceAdjust;
+	capRow2 = capRow2 * param->cellCapacitanceMultiplier + _numCol * param->cellCapacitanceAdjust;
 	
 	initialized = true;  //finish initialization
 }

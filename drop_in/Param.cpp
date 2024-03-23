@@ -230,6 +230,7 @@ void Param::Initialize() {
 	numWritePulse = rfloat("numWritePulse");
 
 	cellCapacitanceAdjust = rfloat("cellCapacitanceAdjust"); // fF
+	cellCapacitanceMultiplier = rfloat("cellCapacitanceMultiplier");
 	vdd = rfloat("vdd");
 	vth = rfloat("vth");
 

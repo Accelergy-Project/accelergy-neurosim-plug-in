@@ -88,6 +88,7 @@ public:
 	double vdd;
 	double vth;
 
+	double cellCapacitanceMultiplier;
 	double cellCapacitanceAdjust;
 
 	double alpha, beta, gamma, delta, epsilon, zeta;
