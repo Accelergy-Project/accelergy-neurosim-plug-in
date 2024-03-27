@@ -383,7 +383,7 @@ def get_neurosim_output(kind: str, attributes: dict) -> Dict[str, float]:
     rval = {k: lo_est[k] + (hi_est[k] - lo_est[k]) * interp_pt for k in hi_est}
     logger.debug("NeuroSim returned: %s", rval)
 
-    assert rval["Area"] > 0, dedent(
+    assert rval["Area"] >= 0, dedent(
         """
         NeuroSim returned an area less than zero. This may occur if the array or
         memory cell size is too small for proper layout of peripheral
@@ -394,32 +394,35 @@ def get_neurosim_output(kind: str, attributes: dict) -> Dict[str, float]:
 
     return rval
 
-def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
-    for n in ['array_adc', 'array_col_drivers']:
-        assert n in SUPPORTED_CLASSES, \
-            'Please update this method body to support the new NeuroSim names.'
 
-    if kind == 'array_col_drivers':
-        attributes['adc_resolution'] = 0
+def query_neurosim(kind: str, attributes: dict) -> Dict[str, float]:
+    for n in ["array_adc", "array_col_drivers"]:
+        assert (
+            n in SUPPORTED_CLASSES
+        ), "Please update this method body to support the new NeuroSim names."
+
+    if kind == "array_col_drivers":
+        attributes["adc_resolution"] = 0
         return get_neurosim_output(kind, attributes)
 
-    if kind in ['array_adc', 'array_col_drivers']:
-        logger.info('First running WITH the ADC to get total energy')
+    if kind in ["array_adc", "array_col_drivers"]:
+        logger.info("First running WITH the ADC to get total energy")
         with_adc = get_neurosim_output(kind, attributes)
-        attributes['adc_resolution'] = 0
-        logger.info('Now running WITHOUT the ADC to get column driver energy')
+        attributes["adc_resolution"] = 0
+        logger.info("Now running WITHOUT the ADC to get column driver energy")
         without_adc = get_neurosim_output(kind, attributes)
-        logger.info('Subtracting column driver energy to get ADC energy')
+        logger.info("Subtracting column driver energy to get ADC energy")
         return {k: with_adc[k] - without_adc[k] for k in with_adc}
     return get_neurosim_output(kind, attributes)
 
 
 def dict_to_str(attributes: Dict) -> str:
-    """ Converts a dictionary into a multi-line string representation """
-    s = '\n'
+    """Converts a dictionary into a multi-line string representation"""
+    s = "\n"
     for k, v in attributes.items():
-        s += f'\t{k}: {v}\n'
+        s += f"\t{k}: {v}\n"
     return s
+
 
 # ==============================================================================
 # Wrapper Class
@@ -427,14 +430,14 @@ def dict_to_str(attributes: Dict) -> str:
 
 
 class NeuroWrapper(AccelergyPlugIn):
-    """ NVSIM wrapper class """
+    """NVSIM wrapper class"""
 
     def __init__(self):
         super().__init__()
         global logger  # pylint: disable=global-statement
         logger = self.logger
         neurointerface.logger = self.logger
-        self.estimator_name = 'Neurosim Estimator'
+        self.estimator_name = "Neurosim Estimator"
 
     def primitive_action_supported(self, query: AccelergyQuery) -> AccuracyEstimation:
         class_name = query.class_name.lower()
@@ -442,13 +445,20 @@ class NeuroWrapper(AccelergyPlugIn):
         if class_name in SUPPORTED_CLASSES:
             if action_name in ALL_ACTIONS:
                 return AccuracyEstimation(ACCURACY)
-            logger.error('ERROR: NeuroSim estimator supports %s but not '
-                         'action %s. Supported actions are: %s',
-                         class_name, action_name, ALL_ACTIONS)
+            logger.error(
+                "ERROR: NeuroSim estimator supports %s but not "
+                "action %s. Supported actions are: %s",
+                class_name,
+                action_name,
+                ALL_ACTIONS,
+            )
             return AccuracyEstimation(0)
         logger.error(
-            'ERROR: NeuroSim estimator does not support %s. Supported '
-            'primitives are: %s', class_name, list(SUPPORTED_CLASSES.keys()))
+            "ERROR: NeuroSim estimator does not support %s. Supported "
+            "primitives are: %s",
+            class_name,
+            list(SUPPORTED_CLASSES.keys()),
+        )
         return AccuracyEstimation(0)
 
     def estimate_energy(self, query: AccelergyQuery) -> Estimation:
@@ -457,24 +467,28 @@ class NeuroWrapper(AccelergyPlugIn):
         attributes = query.class_attrs
         action_name = query.action_name.lower()
         stats = query_neurosim(class_name, attributes)
-        assert action_name in ALL_ACTIONS, \
-            f'{action_name} not supported. Must be in: {ALL_ACTIONS}'
+        assert (
+            action_name in ALL_ACTIONS
+        ), f"{action_name} not supported. Must be in: {ALL_ACTIONS}"
 
         if action_name in READ_ACTIONS:
-            v = stats['Read Energy']
+            v = stats["Read Energy"]
         elif action_name in WRITE_ACTIONS:
-            v = stats['Write Energy']
+            v = stats["Write Energy"]
         else:
-            v = stats['Leakage']
-        return Estimation(v, 'p')
+            v = stats["Leakage"]
+        return Estimation(v, "p")
 
     def primitive_area_supported(self, query: AccelergyQuery) -> AccuracyEstimation:
         class_name = query.class_name.lower()
         if class_name.lower() in SUPPORTED_CLASSES:
             return AccuracyEstimation(ACCURACY)
         logger.error(
-            'ERROR: NeuroSim estimator does not support %s. Supported '
-            'primitives are: %s', class_name, list(SUPPORTED_CLASSES.keys()))
+            "ERROR: NeuroSim estimator does not support %s. Supported "
+            "primitives are: %s",
+            class_name,
+            list(SUPPORTED_CLASSES.keys()),
+        )
         acc = ACCURACY if class_name.lower() in SUPPORTED_CLASSES else 0
         return AccuracyEstimation(acc)
 
@@ -488,8 +502,8 @@ class NeuroWrapper(AccelergyPlugIn):
         :return the estimated area
         :rtype: float
         """
-        a = query_neurosim(query.class_name.lower(), query.class_attrs)['Area']
-        return Estimation(a, 'u^2')
+        a = query_neurosim(query.class_name.lower(), query.class_attrs)["Area"]
+        return Estimation(a, "u^2")
 
     def get_name(self) -> str:
         """
@@ -498,39 +512,45 @@ class NeuroWrapper(AccelergyPlugIn):
         return "Neurosim Plug-In"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     nw = NeuroWrapper()
     misc = {
-        'class_name': 'mux',
-        'action_name': 'read',
-        'attributes': {'technology': 32, 'n_bits': 7, 'n_adder_tree_inputs': 1, 'n_mux_inputs': 32},
+        "class_name": "mux",
+        "action_name": "read",
+        "attributes": {
+            "technology": 32,
+            "n_bits": 7,
+            "n_adder_tree_inputs": 1,
+            "n_mux_inputs": 32,
+        },
     }
     cols = {
-        'class_name': 'array_col_drivers',
-        'action_name': 'read',
-        'attributes': {
-            'technology': 32,
-            'rows': 128,
-            'cols': 128,
-            'cols_active_at_once': 128,
-            'cell_config': 'nvmexplorer_SRAM',
-            'average_input_value': 1,
-            'average_cell_value': 1,
-            'sequential': 1,
-            'adc_resolution': 0,
-            'cycle_seconds': 100e-9},
+        "class_name": "array_col_drivers",
+        "action_name": "read",
+        "attributes": {
+            "technology": 32,
+            "rows": 128,
+            "cols": 128,
+            "cols_active_at_once": 128,
+            "cell_config": "nvmexplorer_SRAM",
+            "average_input_value": 1,
+            "average_cell_value": 1,
+            "sequential": 1,
+            "adc_resolution": 0,
+            "cycle_seconds": 100e-9,
+        },
     }
 
     a = []
     target = misc
     for i in [32]:
-        target['attributes']['technology'] = i
+        target["attributes"]["technology"] = i
         a.append(nw.estimate_energy(target))
-        target['class_name'] = 'nand_gate'
+        target["class_name"] = "nand_gate"
         a.append(nw.estimate_area(target))
-        target['class_name'] = 'not_gate'
+        target["class_name"] = "not_gate"
         a.append(nw.estimate_area(target))
-        target['class_name'] = 'nor_gate'
+        target["class_name"] = "nor_gate"
         a.append(nw.estimate_area(target))
 
-    print('\n'.join(str(x) for x in a))
+    print("\n".join(str(x) for x in a))
