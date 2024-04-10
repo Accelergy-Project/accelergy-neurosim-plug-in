@@ -193,21 +193,15 @@ ALL_PARAMS = {
 # Actions from Accelergy and their translations
 READ_ACTIONS = [
     "read",
-    "mac",
-    "fire",
-    "drive",
-    "run",
     "mac_random",
     "mac_reused",
     "compute",
     "add",
     "shift_add",
-    "max_pool",
-    "maxpool" "convert",
-    "activate",
+    "convert",
 ]
-WRITE_ACTIONS = ["write", "set", "erase"]
-LEAK_ACTIONS = ["leak", "gated_read", "gated_write", "skipped_read", "skipped_write"]
+WRITE_ACTIONS = ["write", "set", "erase", "update"]
+LEAK_ACTIONS = ["leak"]
 ALL_ACTIONS = READ_ACTIONS + WRITE_ACTIONS + LEAK_ACTIONS
 
 # Accelergy prmiitive components supported and their internal names

@@ -51,7 +51,6 @@ setup(
             "share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/",
             ["./neurosim.estimator.yaml"],
         ),
-        ("share/accelergy/primitive_component_libs/", ["neurosim_components.lib.yaml"]),
         (
             "share/accelergy/estimation_plug_ins/accelergy-neurosim-plugin/NeuroSim/",
             ["./NeuroSim/main"],
