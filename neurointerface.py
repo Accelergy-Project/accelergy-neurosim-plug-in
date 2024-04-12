@@ -334,10 +334,10 @@ class Crossbar:
         self.voltage_dac_bits = voltage_dac_bits
         self.temporal_dac_bits = temporal_dac_bits
         self.temporal_spiking = temporal_spiking
-        self.adc_action_share = 1
-        self.adc_area_share = 1
-        self.cell_read_leak_action_share = 1
-        self.cell_write_action_share = 1
+        self.adc_energy_scale = 1
+        self.adc_area_scale = 1
+        self.cell_read_leak_energy_scale = 1
+        self.cell_write_energy_scale = 1
         self.voltage = voltage
         self.threshold_voltage = threshold_voltage
 
@@ -351,10 +351,10 @@ class Crossbar:
 
         # Build config
         cfg, other_vars = buildcfg(cellfile, cfgfile)
-        self.cell_read_leak_action_share *= other_vars.get(
+        self.cell_read_leak_energy_scale *= other_vars.get(
             "cell_read_leak_energy_mult", 1
         )
-        self.cell_write_action_share *= other_vars.get("cell_write_energy_mult", 1)
+        self.cell_write_energy_scale *= other_vars.get("cell_write_energy_mult", 1)
         # Make sure cols_muxed is set before cols so that you don't get part of the name
         # overwritten
         my_set = [
@@ -419,10 +419,10 @@ class Crossbar:
         ]
         for c in self.comps:
             if "adc" in c.name:
-                c.area *= self.adc_area_share
+                c.area *= self.adc_area_scale
                 for a in dir(c):
                     if "energy" in a:
-                        setattr(c, a, getattr(c, a) * self.adc_action_share)
+                        setattr(c, a, getattr(c, a) * self.adc_energy_scale)
 
         if not self.comps:
             logger.error("NeuroSIM returned no components. NeuroSIM output below.")
@@ -614,9 +614,9 @@ def cell_stats(
 
     # Cells will have a substantial leakage impact
     # Also multiply read energy by temporal DAC bits
-    rlscale = crossbar.cell_read_leak_action_share
+    rlscale = crossbar.cell_read_leak_energy_scale
     act_time = crossbar.max_activation_time
-    wscale = crossbar.cell_write_action_share
+    wscale = crossbar.cell_write_energy_scale
     return stats2dict(
         read_memcell_energy * act_time,
         write_memcell_energy * wscale,
