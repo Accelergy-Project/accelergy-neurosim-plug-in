@@ -6,10 +6,14 @@ from accelergy.plug_in_interface.estimator_wrapper import (
     AccuracyEstimation,
     AccelergyQuery,
 )
+from accelergy.plug_in_interface.estimator_wrapper import (
+    SupportedComponent,
+    PrintableCall,
+)
 import math
 import sys
 import os
-from typing import Dict
+from typing import Dict, List
 from textwrap import dedent
 
 # Need to add this directory to path for proper imports
@@ -43,6 +47,11 @@ SHARED_PARAMS = {
         f"REQUIRED: Duration of one cycle in seconds",
         1e-9,
         float,
+    ),
+    "technology": (
+        f"REQUIRED: Technology node. Must be between {max(PERMITTED_TECH_NODES)}  "
+        f"and {min(PERMITTED_TECH_NODES)}nm.",
+        32,
     ),
 }
 
@@ -165,12 +174,6 @@ PARAM_DICTS = [
     MUX_PARAMS,
     FLIP_FLOP_PARAMS,
 ]
-for p in PARAM_DICTS:
-    p["technology"] = (
-        f"REQUIRED: Technology node. Must be between {max(PERMITTED_TECH_NODES)}  "
-        f"and {min(PERMITTED_TECH_NODES)}nm.",
-        32,
-    )
 
 PERIPHERAL_PARAMS = {
     **ADDER_PARAMS,
@@ -216,9 +219,9 @@ SUPPORTED_CLASSES = {
     "max_pool": (neurointerface.max_pool_stats, MAX_POOL_PARAMS),
     "mux": (neurointerface.mux_stats, MUX_PARAMS),
     "flip_flop": (neurointerface.flip_flop_stats, FLIP_FLOP_PARAMS),
-    "not_gate": (neurointerface.not_gate_stats, {}),
-    "nand_gate": (neurointerface.nand_gate_stats, {}),
-    "nor_gate": (neurointerface.nor_gate_stats, {}),
+    "not_gate": (neurointerface.not_gate_stats, SHARED_PARAMS),
+    "nand_gate": (neurointerface.nand_gate_stats, SHARED_PARAMS),
+    "nor_gate": (neurointerface.nor_gate_stats, SHARED_PARAMS),
 }
 
 PRINTED_INTERP_WARNING = False
@@ -504,6 +507,18 @@ class NeuroWrapper(AccelergyPlugIn):
         Returns the name of the plug-in.
         """
         return "Neurosim Plug-In"
+
+    def get_supported_components(self) -> List[SupportedComponent]:
+        supported = []
+        for c, (_, params) in SUPPORTED_CLASSES.items():
+            supported.append(
+                SupportedComponent(
+                    [c],
+                    PrintableCall("", [], {p: v[1] for p, v in params.items()}),
+                    [PrintableCall(a) for a in ALL_ACTIONS],
+                )
+            )
+        return supported
 
 
 if __name__ == "__main__":
